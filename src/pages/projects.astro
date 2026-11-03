@@ -1,0 +1,201 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { projects, courses } from '../data/projects';
+const base = import.meta.env.BASE_URL;
+---
+
+<Layout>
+	<main class="all-projects-page">
+		<a class="back-link" href={base} aria-label="Back home">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
+		</a>
+
+		<header class="page-head">
+			<h1>Projects</h1>
+			<nav class="courses" aria-label="Course work">
+				{courses.map((course) => (
+					<a href={course.href}>{course.title}</a>
+				))}
+			</nav>
+		</header>
+
+		<ul class="cards">
+			{projects.map((project) => (
+				<li>
+					<a
+						href={project.href}
+						class="card"
+						{...(project.external ? { target: '_blank', rel: 'noreferrer' } : {})}
+					>
+						<span class="card-shot">
+							<img src={project.image} alt={project.alt} loading="lazy" />
+						</span>
+						<span class="card-text">
+							<span class="card-title">{project.title}</span>
+							<span class="card-blurb">{project.blurb}</span>
+						</span>
+					</a>
+				</li>
+			))}
+		</ul>
+	</main>
+</Layout>
+
+<style>
+	.all-projects-page {
+		--ink: #111111;
+		--line: 3px solid var(--ink);
+
+		max-width: 1240px;
+		margin: 0 auto;
+		padding: 2.5rem 8vw 8rem;
+		font-family: 'Space Grotesk', Inter, Arial, sans-serif;
+		color: var(--ink);
+	}
+
+	.back-link {
+		display: inline-grid;
+		place-items: center;
+		width: 3rem;
+		height: 3rem;
+		margin-bottom: 3rem;
+		border: var(--line);
+		border-radius: 50%;
+		color: var(--ink);
+		transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+	}
+
+	.back-link svg {
+		width: 1.4rem;
+		height: 1.4rem;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2.5;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	.back-link:hover {
+		background: var(--ink);
+		color: #ffffff;
+		transform: translateX(-2px);
+	}
+
+	.page-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1.5rem 2rem;
+		margin-bottom: 4rem;
+	}
+
+	h1 {
+		margin: 0;
+		font-family: 'Super Ramen', 'Arial Rounded MT Bold', sans-serif;
+		font-size: clamp(3rem, 8vw, 6rem);
+		font-weight: 400;
+		line-height: 1;
+		color: #ffffff;
+	}
+
+	.courses {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.courses a {
+		padding: 0.8rem 1.4rem;
+		border: var(--line);
+		border-radius: 999px;
+		color: var(--ink);
+		font-size: 1rem;
+		font-weight: 600;
+		text-decoration: none;
+		transition: background-color 0.2s ease, color 0.2s ease;
+	}
+
+	.courses a:hover {
+		background: var(--ink);
+		color: #ffffff;
+	}
+
+	.cards {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+		gap: 3rem 2.5rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.card {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		color: var(--ink);
+		text-decoration: none;
+	}
+
+	.card-shot {
+		display: block;
+		aspect-ratio: 16 / 10;
+		overflow: hidden;
+		border: var(--line);
+		background: var(--ink);
+	}
+
+	.card-shot img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform 0.4s ease;
+	}
+
+	.card:hover .card-shot img,
+	.card:focus-visible .card-shot img {
+		transform: scale(1.04);
+	}
+
+	.card-text {
+		display: grid;
+		gap: 0.4rem;
+		padding-top: 1rem;
+	}
+
+	.card-title {
+		font-size: 1.375rem;
+		font-weight: 600;
+		letter-spacing: -0.02em;
+	}
+
+	.card:hover .card-title {
+		text-decoration: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.18em;
+	}
+
+	.card-blurb {
+		font-size: 1rem;
+		line-height: 1.5;
+	}
+
+	.back-link:focus-visible,
+	.courses a:focus-visible,
+	.card:focus-visible {
+		outline: 3px solid #ffffff;
+		outline-offset: 4px;
+	}
+
+	@media (max-width: 768px) {
+		.all-projects-page {
+			padding: 2rem 20px 5rem;
+		}
+
+		.page-head {
+			margin-bottom: 2.5rem;
+		}
+	}
+</style>

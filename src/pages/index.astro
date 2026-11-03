@@ -1,166 +1,470 @@
 ---
-import background from '../assets/background.svg';
-import headshot from '../assets/headshot.png';
 import Layout from '../layouts/Layout.astro';
-import halftone_star from '../assets/halftone_star.png';
+import { ThreeDPhotoCarousel } from '../components/ui/3d-carousel';
+import { projects } from '../data/projects';
 const base = import.meta.env.BASE_URL;
+
+const experience = [
+	{
+		role: 'Software Development Intern',
+		org: 'Siemens',
+		place: 'Milford, Ohio',
+		when: 'Jan 2025 – Present',
+		points: [
+			'Resolved 50+ customer-reported and internal issues in Siemens NX CAD, boosting stability and cutting the defect backlog by 10%.',
+			'Designed and shipped 3 new internal launch methods for NX, reducing Teamcenter integration setup time by 15% for 100+ engineers.',
+		],
+	},
+	{
+		role: 'Research Co-Op',
+		org: 'Feng Chia University',
+		place: 'Taichung, Taiwan',
+		when: 'May – Aug 2024',
+		points: [
+			'Configured network devices and protocols in Cisco Packet Tracer.',
+			'Analysed, troubleshot and fixed protocol connectivity problems.',
+		],
+	},
+	{
+		role: 'Software Development Intern',
+		org: 'Wolters Kluwer',
+		place: 'Madison, Wisconsin',
+		when: 'Jan – May 2024',
+		points: [
+			'Took part in daily stand-ups, sprint planning, reviews and retrospectives to keep sprints on track.',
+			'Updated NuGet packages and project code to move the team application to a newer .NET framework.',
+		],
+	},
+];
 ---
 
 <Layout>
 	<div id="container">
-		<img id="background" src={background.src} alt="" fetchpriority="high" />
 		<main>
-		<div>
-			<img src={`${base}halftone_star.png`} alt="" />
-		</div>
-			<section id="hero">
-				<div class="intro-row">
-					<div id="headshot">
-						<img src={headshot.src} alt="Maya Tomarchio headshot" />
-					</div>
-					<div id="resume-block">
-						<h1>Maya Tomarchio</h1>
-						<a href={`${base}resume.pdf`} class="button resume-button" target="_blank" rel="noreferrer">Resume</a>
-					</div>
+			<header class="intro">
+				<img class="me" src={`${base}me.jpg`} alt="Maya Tomarchio" width="600" height="600" />
+				<div class="name-block">
+					<h1 class="big-name">Maya Tomarchio</h1>
+					<p class="tagline">Have your cake and eat it too</p>
 				</div>
+			</header>
+			<div>
+				<img src={`${base}halftone_star.png`} alt="" />
+			</div>
+
+			<section id="projects" aria-label="Projects">
+				<ThreeDPhotoCarousel client:visible projects={projects} />
+				<a href={`${base}projects`} class="all-projects">All projects</a>
+			</section>
+
+			<section id="experience" aria-label="Work experience">
+				<ol class="timeline">
+					{experience.map((job) => (
+						<li class="job">
+							<div class="job-meta">
+								<p class="when">{job.when}</p>
+								<p class="where">{job.org}<br />{job.place}</p>
+							</div>
+							<article class="job-body">
+								<h3>{job.role}</h3>
+								<ul>
+									{job.points.map((point) => <li>{point}</li>)}
+								</ul>
+							</article>
+						</li>
+					))}
+				</ol>
+				<a href={`${base}resume.pdf`} class="pdf-link" target="_blank" rel="noreferrer">Full resume (PDF)</a>
 			</section>
 		</main>
-
-		<aside class="side-nav">
-			<a href={`${base}CG_class`}>Computer Graphics</a>
-			<a href={`${base}UI_class`}>User Interface</a>
-		</aside>
 	</div>
 </Layout>
 
 <style>
-	.intro-row {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 1rem;
-		margin-bottom: 1rem;
-	}
-
-	#headshot {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	#headshot img {
-		display: block;
-		width: 140px;
-		height: 140px;
-		object-fit: cover;
-		border-radius: 50%;
-		border: 5px solid #1d4ed8;
-		background: white;
-		box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.15);
-	}
-
-	#background {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		z-index: -1;
-		filter: blur(100px);
-	}
-
 	#container {
+		--ink: #111111;
+
 		font-family: Inter, Roboto, 'Helvetica Neue', 'Arial Nova', 'Nimbus Sans', Arial, sans-serif;
 		height: 100%;
+		color: var(--ink);
+		/* the tagline swells past the window edges mid-animation; don't let it add a scrollbar */
+		overflow-x: clip;
 	}
 
 	main {
-		height: 100%;
+		min-height: 100%;
 		display: flex;
-		justify-content: center;
+		flex-direction: column;
+		align-items: center;
+		padding-bottom: 8rem;
 	}
 
-	#hero {
+	.intro {
 		display: flex;
 		align-items: center;
-		flex-direction: column;
 		justify-content: center;
-		padding: 16px;
+		gap: clamp(1.25rem, 2.5vw, 2.5rem);
+		width: 100%;
+		margin: 7rem 0 2rem;
+		padding: 0 8vw;
+		box-sizing: border-box;
 	}
 
-	#resume-block {
+	.me {
+		flex-shrink: 0;
+		width: clamp(64px, 6.5vw, 108px);
+		height: auto;
+		aspect-ratio: 1;
+		object-fit: cover;
+		border: 4px solid #ffffff;
+		border-radius: 50%;
+		background: #ffffff;
+	}
+
+	.name-block {
 		display: flex;
 		flex-direction: column;
-		align-items: flex-start;
-		margin: 1rem;
+		align-items: center;
 	}
 
-	h1 {
-		font-size: 2rem;
+	/* flies in from behind the name, turns about half a turn on the Y axis, then settles */
+	.tagline {
+		margin: 1rem 0 0;
+		font-family: 'Orbitron', 'Space Grotesk', sans-serif;
+		font-size: clamp(0.95rem, 1.7vw, 1.6rem);
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		white-space: nowrap;
+		color: #00f0ff;
+		transform-origin: center;
+		backface-visibility: visible;
+		animation: tagline-in 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
+	}
+
+	/* starts just in front of the viewer's face, then travels away into the page and lands, in one move.
+	   The perspective lives on the tagline itself so it grows from its own centre and stays level. */
+	@keyframes tagline-in {
+		0% {
+			opacity: 0;
+			transform: perspective(900px) translate3d(0, -3px, 820px) rotateY(180deg);
+			filter: blur(6px);
+		}
+		25% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 1;
+			transform: perspective(900px) translate3d(0, 0, 0) rotateY(0deg);
+			filter: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.tagline {
+			animation: none;
+		}
+	}
+
+	.big-name {
 		margin: 0;
-	}
-
-	.resume-button {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 12px 20px;
-		margin-top: 1rem;
-		border-radius: 10px;
-		text-decoration: none;
-		font-weight: 600;
-		letter-spacing: 0.04em;
+		text-align: center;
+		font-family: 'Unbounded', 'Arial Black', sans-serif;
+		font-size: 5vw;
+		white-space: nowrap;
+		font-weight: 900;
+		line-height: 1;
+		letter-spacing: -0.03em;
 		text-transform: uppercase;
-		font-size: 12px;
-		color: white;
-		background: linear-gradient(83.21deg, #3245ff 0%, #bc52ee 100%);
-		box-shadow:
-			inset 0 0 0 1px rgba(255, 255, 255, 0.12),
-			inset 0 -2px 0 rgba(0, 0, 0, 0.24);
-		transition: transform 0.2s ease, opacity 0.2s ease;
+		color: #ffffff;
 	}
 
-	.resume-button:hover {
-		transform: translateY(-1px);
-		opacity: 0.92;
-	}
-
-	.side-nav {
-		position: absolute;
-		top: 24px;
-		right: 24px;
+	#projects {
 		display: flex;
 		flex-direction: column;
-		align-items: flex-end;
-		gap: 12px;
-		z-index: 2;
+		align-items: center;
+		width: 100%;
+		margin-top: 4rem;
+		padding: 0 4vw;
+		box-sizing: border-box;
 	}
 
-	.side-nav a {
-		display: inline-block;
-		padding: 10px 14px;
+	.all-projects {
+		margin-top: 2rem;
+		padding: 0.9rem 1.9rem;
+		border: 3px solid var(--ink);
 		border-radius: 999px;
-		background: rgba(17, 17, 17, 0.9);
-		color: white;
+		background: var(--ink);
+		color: #ffffff;
+		font-size: 1rem;
+		font-weight: 600;
 		text-decoration: none;
-		font-size: 12px;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		transition: transform 0.2s ease, opacity 0.2s ease;
+		transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 	}
 
-	.side-nav a:hover {
-		transform: translateX(-2px);
-		opacity: 0.9;
+	.all-projects:hover {
+		background: transparent;
+		color: var(--ink);
+	}
+
+	.all-projects:active {
+		transform: scale(0.97);
+	}
+
+	.all-projects:focus-visible {
+		outline: 3px solid #ffffff;
+		outline-offset: 3px;
+	}
+
+	/* Work experience: each job is a 3/4-width block, alternating left and right down the page */
+	#experience {
+		--hair: 1px solid var(--ink);
+
+		width: 100%;
+		max-width: calc(1240px + 16vw);
+		margin-top: 10rem;
+		padding: 0 8vw;
+		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		font-family: 'Space Grotesk', Inter, Arial, sans-serif;
+	}
+
+	.timeline {
+		display: grid;
+		gap: 7rem;
+		width: 100%;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.job {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+		column-gap: clamp(2.5rem, 6vw, 6rem);
+		align-items: start;
+		width: 75%;
+		justify-self: start;
+	}
+
+	.job:nth-child(even) {
+		justify-self: end;
+	}
+
+	.job-meta,
+	.job-body {
+		grid-row: 1;
+	}
+
+	.job-meta {
+		grid-column: 1;
+		padding-top: 1.75rem;
+		text-align: right;
+	}
+
+	.job-body {
+		grid-column: 2;
+	}
+
+	/* on right-hand rows the dates sit on the far side, facing the edge */
+	.job:nth-child(even) {
+		grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+	}
+
+	.job:nth-child(even) .job-meta {
+		grid-column: 2;
+		text-align: left;
+	}
+
+	.job:nth-child(even) .job-body {
+		grid-column: 1;
+	}
+
+	.when {
+		margin: 0;
+		font-size: 1.125rem;
+		font-weight: 600;
+		letter-spacing: -0.01em;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.where {
+		margin: 0.5rem 0 0;
+		font-size: 1rem;
+		line-height: 1.5;
+	}
+
+	/* thin L-shaped brackets on two corners of each role */
+	.job-body {
+		position: relative;
+		padding: 1.75rem 2rem;
+	}
+
+	.job-body::before,
+	.job-body::after {
+		content: '';
+		position: absolute;
+		width: 28px;
+		height: 28px;
+		pointer-events: none;
+	}
+
+	.job-body::before {
+		top: 0;
+		left: 0;
+		border-top: var(--hair);
+		border-left: var(--hair);
+	}
+
+	.job-body::after {
+		right: 0;
+		bottom: 0;
+		border-right: var(--hair);
+		border-bottom: var(--hair);
+	}
+
+	.job:nth-child(even) .job-body::before {
+		left: auto;
+		right: 0;
+		border-left: 0;
+		border-right: var(--hair);
+	}
+
+	.job:nth-child(even) .job-body::after {
+		right: auto;
+		left: 0;
+		border-right: 0;
+		border-left: var(--hair);
+	}
+
+	.job-body h3 {
+		margin: 0;
+		font-size: clamp(1.25rem, 1.8vw, 1.5rem);
+		font-weight: 600;
+		line-height: 1.2;
+		letter-spacing: -0.02em;
+	}
+
+	.job-body ul {
+		margin: 1rem 0 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		gap: 0.6rem;
+		max-width: 46ch;
+	}
+
+	.job-body li {
+		font-size: 1rem;
+		line-height: 1.6;
+	}
+
+	.pdf-link {
+		position: relative;
+		margin-top: 8rem;
+		padding: 0.9rem 1.5rem;
+		color: var(--ink);
+		font-size: 1rem;
+		font-weight: 600;
+		text-decoration: none;
+		transition: background-color 0.2s ease, color 0.2s ease;
+	}
+
+	.pdf-link::before,
+	.pdf-link::after {
+		content: '';
+		position: absolute;
+		width: 12px;
+		height: 12px;
+		transition: width 0.25s ease, height 0.25s ease;
+	}
+
+	.pdf-link::before {
+		top: 0;
+		left: 0;
+		border-top: var(--hair);
+		border-left: var(--hair);
+	}
+
+	.pdf-link::after {
+		right: 0;
+		bottom: 0;
+		border-right: var(--hair);
+		border-bottom: var(--hair);
+	}
+
+	.pdf-link:hover::before,
+	.pdf-link:hover::after {
+		width: 100%;
+		height: 100%;
+	}
+
+	.pdf-link:focus-visible {
+		outline: 3px solid #ffffff;
+		outline-offset: 3px;
 	}
 
 	@media screen and (max-width: 768px) {
-		.intro-row {
+		/* not enough width for the photo beside the name, so it sits above */
+		.intro {
 			flex-direction: column;
+			margin-top: 8.5rem;
 		}
 
-		#resume-block {
-			align-items: center;
+		.big-name {
+			font-size: 7vw;
+		}
+
+		#experience {
+			margin-top: 6rem;
+			padding: 0 20px;
+		}
+
+		/* single column: full width, dates above each role */
+		.timeline {
+			gap: 4rem;
+		}
+
+		.job,
+		.job:nth-child(even) {
+			width: 100%;
+			grid-template-columns: 1fr;
+			row-gap: 1rem;
+		}
+
+		.job-meta,
+		.job:nth-child(even) .job-meta {
+			grid-column: 1;
+			grid-row: 1;
+			padding-top: 0;
+			text-align: left;
+		}
+
+		.job-body,
+		.job:nth-child(even) .job-body {
+			grid-column: 1;
+			grid-row: 2;
+			padding: 1.25rem 1.25rem;
+		}
+
+		.job:nth-child(even) .job-body::before {
+			left: 0;
+			right: auto;
+			border-right: 0;
+			border-left: var(--hair);
+		}
+
+		.job:nth-child(even) .job-body::after {
+			left: auto;
+			right: 0;
+			border-left: 0;
+			border-right: var(--hair);
+		}
+
+		.pdf-link {
+			margin-top: 5rem;
 		}
 	}
 </style>

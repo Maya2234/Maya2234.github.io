@@ -1,0 +1,161 @@
+.tdc {
+	--tdc-ink: #111111;
+
+	position: relative;
+	width: 100%;
+	/* the ring is far wider than the screen; keep it from widening the page */
+	overflow: hidden;
+}
+
+.tdc-stage {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 380px;
+	overflow: hidden;
+	perspective: 1000px;
+	transform-style: preserve-3d;
+}
+
+.tdc-ring {
+	position: relative;
+	display: flex;
+	justify-content: center;
+	height: 100%;
+	transform-origin: center;
+	transform-style: preserve-3d;
+	will-change: transform;
+	cursor: grab;
+}
+
+.tdc-ring:active {
+	cursor: grabbing;
+}
+
+.tdc-face {
+	position: absolute;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	padding: 0 8px;
+	box-sizing: border-box;
+	transform-origin: center;
+}
+
+.tdc-card {
+	position: relative;
+	display: block;
+	width: 100%;
+	aspect-ratio: 16 / 10;
+	overflow: hidden;
+	border: 3px solid var(--tdc-ink);
+	background: var(--tdc-ink);
+	-webkit-user-drag: none;
+}
+
+.tdc-card img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	pointer-events: none;
+	user-select: none;
+	transition: opacity 0.3s ease;
+}
+
+.tdc-title {
+	position: absolute;
+	inset: auto 0 0 0;
+	padding: 0.6rem 0.8rem;
+	background: var(--tdc-ink);
+	color: #ffffff;
+	font-size: 1rem;
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	transform: translateY(100%);
+	transition: transform 0.25s ease;
+}
+
+.tdc-card:hover img,
+.tdc-card:focus-visible img {
+	opacity: 0.85;
+}
+
+.tdc-card:hover .tdc-title,
+.tdc-card:focus-visible .tdc-title {
+	transform: none;
+}
+
+.tdc-card:focus-visible {
+	outline: 3px solid #ffffff;
+	outline-offset: 3px;
+}
+
+/* No hover on touch screens, so the title stays visible there */
+@media (hover: none) {
+	.tdc-title {
+		transform: none;
+	}
+}
+
+.tdc-arrow {
+	position: absolute;
+	top: 50%;
+	z-index: 2;
+	display: grid;
+	place-items: center;
+	width: 3.5rem;
+	height: 3.5rem;
+	padding: 0;
+	border: 3px solid var(--tdc-ink);
+	border-radius: 50%;
+	background: #e63e7d;
+	color: var(--tdc-ink);
+	cursor: pointer;
+	transform: translateY(-50%);
+	transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.tdc-arrow-prev {
+	left: 0;
+}
+
+.tdc-arrow-next {
+	right: 0;
+}
+
+.tdc-arrow svg {
+	width: 1.5rem;
+	height: 1.5rem;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2.5;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.tdc-arrow:hover {
+	background: var(--tdc-ink);
+	color: #ffffff;
+}
+
+.tdc-arrow:active {
+	transform: translateY(-50%) scale(0.94);
+}
+
+.tdc-arrow:focus-visible {
+	outline: 3px solid #ffffff;
+	outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+	.tdc-stage {
+		height: 280px;
+	}
+
+	.tdc-arrow {
+		width: 3rem;
+		height: 3rem;
+	}
+}

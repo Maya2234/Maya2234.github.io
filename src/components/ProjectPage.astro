@@ -1,0 +1,207 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+interface Props {
+	title: string;
+	subtitle: string;
+	image: string;
+	alt: string;
+	url: string;
+	cta: string;
+}
+
+const { title, subtitle, image, alt, url, cta } = Astro.props;
+const base = import.meta.env.BASE_URL;
+---
+
+<Layout>
+	<main class="project-page">
+		<a class="back-link" href={base} aria-label="Back home">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
+		</a>
+
+		<header class="hero">
+			<h1>{title}</h1>
+			<p class="subtitle">{subtitle}</p>
+		</header>
+
+		<section class="preview">
+			<a href={url} target="_blank" rel="noreferrer" class="preview-frame">
+				<img src={`${base}${image}`} alt={alt} />
+			</a>
+			<div class="project-info">
+				<slot />
+				<div class="actions">
+					<a href={url} target="_blank" rel="noreferrer" class="primary-button">{cta}</a>
+				</div>
+			</div>
+		</section>
+
+		{Astro.slots.has('details') && (
+			<section class="details">
+				<slot name="details" />
+			</section>
+		)}
+	</main>
+</Layout>
+
+<style>
+	.project-page {
+		--ink: #111111;
+		--line: 3px solid var(--ink);
+
+		max-width: 1100px;
+		margin: 0 auto;
+		padding: 2.5rem 8vw 6rem;
+		font-family: Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
+		color: var(--ink);
+	}
+
+	.back-link {
+		display: inline-grid;
+		place-items: center;
+		width: 3rem;
+		height: 3rem;
+		margin-bottom: 3rem;
+		border: var(--line);
+		border-radius: 50%;
+		color: var(--ink);
+		transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+	}
+
+	.back-link svg {
+		width: 1.4rem;
+		height: 1.4rem;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2.5;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	.back-link:hover {
+		background: var(--ink);
+		color: #ffffff;
+		transform: translateX(-2px);
+	}
+
+	.hero {
+		margin-bottom: 3rem;
+	}
+
+	h1 {
+		margin: 0;
+		font-size: clamp(2.5rem, 6vw, 4.5rem);
+		font-weight: 600;
+		line-height: 1;
+		letter-spacing: -0.03em;
+		color: #ffffff;
+	}
+
+	.subtitle {
+		margin: 1rem 0 0;
+		font-size: 1.25rem;
+	}
+
+	.preview {
+		display: grid;
+		grid-template-columns: 1.4fr 1fr;
+		gap: 3rem;
+		align-items: start;
+	}
+
+	.preview-frame {
+		display: block;
+		border: var(--line);
+		overflow: hidden;
+	}
+
+	.preview-frame img {
+		display: block;
+		width: 100%;
+		transition: transform 0.4s ease;
+	}
+
+	.preview-frame:hover img {
+		transform: scale(1.02);
+	}
+
+	.project-info :global(p),
+	.details :global(p),
+	.details :global(li) {
+		margin: 0;
+		font-size: 1.125rem;
+		line-height: 1.6;
+	}
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem;
+		margin-top: 2rem;
+	}
+
+	.primary-button {
+		padding: 0.9rem 1.75rem;
+		border: var(--line);
+		border-radius: 999px;
+		font-weight: 600;
+		text-decoration: none;
+		transition: background-color 0.2s ease, color 0.2s ease;
+	}
+
+	.primary-button {
+		background: var(--ink);
+		color: #ffffff;
+	}
+
+	.primary-button:hover {
+		background: transparent;
+		color: var(--ink);
+	}
+
+	.details {
+		display: grid;
+		gap: 2rem;
+		margin-top: 5rem;
+		padding: 2.5rem;
+		border: var(--line);
+	}
+
+	.details :global(h2) {
+		margin: 0 0 0.75rem;
+		font-size: 1.5rem;
+		font-weight: 600;
+		letter-spacing: -0.02em;
+	}
+
+	.details :global(ol) {
+		margin: 0;
+		padding-left: 1.4rem;
+		display: grid;
+		gap: 0.4rem;
+	}
+
+	.back-link:focus-visible,
+	.preview-frame:focus-visible,
+	.primary-button:focus-visible {
+		outline: 3px solid #ffffff;
+		outline-offset: 3px;
+	}
+
+	@media (max-width: 768px) {
+		.project-page {
+			padding: 2rem 20px 4rem;
+		}
+
+		.preview {
+			grid-template-columns: 1fr;
+			gap: 2rem;
+		}
+
+		.details {
+			margin-top: 3rem;
+			padding: 1.5rem;
+		}
+	}
+</style>
