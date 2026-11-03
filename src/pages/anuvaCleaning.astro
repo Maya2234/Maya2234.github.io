@@ -1,0 +1,53 @@
+---
+import ProjectPage from '../components/ProjectPage.astro';
+---
+
+<ProjectPage
+	title="Anuva Cleaning"
+	subtitle="Cincinnati commercial cleaning. Built to perform."
+	image="anuvaCleaning.png"
+	alt="Home page of Anuva, a Cincinnati commercial cleaning company, over a photo of the Cincinnati skyline"
+	url="https://anuvacleaning.com"
+	cta="Visit the live site"
+	tags={['Website', 'Live site']}
+>
+	<p>
+		The website for Anuva, a woman- and minority-owned commercial cleaning and facility services company that has
+		served greater Cincinnati since 2014. It speaks to government, construction, healthcare, education and large-venue
+		clients, and turns visits into quote requests.
+	</p>
+
+	<Fragment slot="details">
+		<div>
+			<h2>What the site does</h2>
+			<ul>
+				<li><strong>Leads with the offer:</strong> a skyline hero with the headline, a one-line pitch and two actions, Request a quote and View our services.</li>
+				<li><strong>Builds trust fast:</strong> a strip of credentials (woman and minority-owned, government contract experience, prevailing-wage capable, fully insured, established 2014) and a panel of certifications.</li>
+				<li><strong>Sorts visitors by industry:</strong> government, construction, commercial, healthcare, education, and large venues and events, each with its own short pitch.</li>
+				<li><strong>Lists the services:</strong> commercial janitorial, construction cleaning, day porter services, floor care, event and venue cleaning, and disinfecting.</li>
+			</ul>
+		</div>
+
+		<div>
+			<h2>Built for public contracts</h2>
+			<p>
+				A dedicated government contracting section explains that wage determinations and certified payroll are reviewed
+				before every project, which matters to the public-sector buyers the company bids for.
+			</p>
+		</div>
+
+		<div>
+			<h2>Proof of work</h2>
+			<p>
+				A recent-projects section shows real engagements by sector: six months of hospital cleaning at UC Hospital, two
+				years of ongoing service for StandardAero, event and ongoing cleaning for the Cincinnati Open tennis
+				tournament, and day porter services across seven Sharonville schools.
+			</p>
+		</div>
+
+		<div>
+			<h2>Pages</h2>
+			<p>Home, Services, Industries, Government contracting, About, and a Request a quote form.</p>
+		</div>
+	</Fragment>
+</ProjectPage>

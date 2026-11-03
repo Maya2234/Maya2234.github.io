@@ -4,9 +4,9 @@ import './3d-carousel.css';
 
 export const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
+// Starts at defaultValue on both server and first client render (so hydration matches), then updates
 export function useMediaQuery(query: string, defaultValue = false): boolean {
-	const getMatches = () => (typeof window === 'undefined' ? defaultValue : window.matchMedia(query).matches);
-	const [matches, setMatches] = useState<boolean>(getMatches);
+	const [matches, setMatches] = useState<boolean>(defaultValue);
 
 	useIsomorphicLayoutEffect(() => {
 		const media = window.matchMedia(query);

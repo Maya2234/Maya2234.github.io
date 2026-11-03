@@ -1,0 +1,37 @@
+---
+// Four-point chrome sparkle from the mood board: pink chrome body with a white highlight.
+interface Props {
+	size?: number;
+	class?: string;
+	style?: string;
+	delay?: number;
+}
+
+const { size = 48, class: className = '', style = '', delay = 0 } = Astro.props;
+const id = `sp-${Math.random().toString(36).slice(2, 9)}`;
+---
+
+<svg
+	class:list={['sparkle', className]}
+	width={size}
+	height={size}
+	viewBox="0 0 100 100"
+	aria-hidden="true"
+	style={`animation-delay:${delay}s;${style}`}
+>
+	<defs>
+		<linearGradient id={`${id}-body`} x1="0" y1="0" x2="1" y2="1">
+			<stop offset="0" stop-color="#ffe1ef" />
+			<stop offset="0.35" stop-color="#f58cbd" />
+			<stop offset="0.6" stop-color="#c7387c" />
+			<stop offset="1" stop-color="#ffb6d8" />
+		</linearGradient>
+	</defs>
+	<path
+		d="M50 0 C55 32 68 45 100 50 C68 55 55 68 50 100 C45 68 32 55 0 50 C32 45 45 32 50 0 Z"
+		fill={`url(#${id}-body)`}
+		stroke="#7a1745"
+		stroke-width="1.2"
+	/>
+	<path d="M50 10 C52 34 60 44 78 48 C60 47 52 40 50 10 Z" fill="#ffffff" opacity="0.85" />
+</svg>

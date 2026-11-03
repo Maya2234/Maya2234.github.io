@@ -1,0 +1,115 @@
+---
+import Sparkle from './Sparkle.astro';
+
+interface Props {
+	current?: 'home' | 'projects' | 'wall';
+}
+
+const { current } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const tabs = [
+	{ id: 'home', label: 'Home', href: base },
+	{ id: 'projects', label: 'Projects', href: `${base}projects` },
+	{ id: 'wall', label: 'Message wall', href: `${base}message-wall` },
+];
+---
+
+<nav class="site-nav" aria-label="Main">
+	<a class="wordmark" href={base} aria-label="Maya Tomarchio, home">
+		<Sparkle size={26} />
+		<span>MT</span>
+	</a>
+	<ul>
+		{tabs.map((tab) => (
+			<li>
+				<a href={tab.href} class:list={['tab', { active: tab.id === current }]} aria-current={tab.id === current ? 'page' : undefined}>
+					{tab.label}
+				</a>
+			</li>
+		))}
+	</ul>
+</nav>
+
+<style>
+	.site-nav {
+		position: relative;
+		z-index: 5;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		max-width: 1240px;
+		margin: 0 auto;
+		padding: 1.25rem 4vw 0;
+	}
+
+	.wordmark {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		color: var(--white);
+		font-family: var(--font-display);
+		font-size: 1.15rem;
+		text-decoration: none;
+	}
+
+	ul {
+		display: flex;
+		gap: 0.4rem;
+		margin: 0;
+		padding: 0.3rem;
+		list-style: none;
+		border: 2px solid var(--ink);
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.18);
+	}
+
+	.tab {
+		display: block;
+		padding: 0.55rem 1.1rem;
+		border-radius: 999px;
+		color: var(--ink);
+		font-family: var(--font-text);
+		font-size: 0.95rem;
+		font-weight: 600;
+		text-decoration: none;
+		white-space: nowrap;
+		transition: background-color 0.2s ease, color 0.2s ease;
+	}
+
+	.tab:hover {
+		background: rgba(255, 255, 255, 0.45);
+	}
+
+	/* the open tab gets the glossy Aero gel */
+	.tab.active {
+		background: linear-gradient(180deg, #ffffff 0%, #eaf9ff 46%, #b9ecff 52%, #e3f8ff 100%);
+		box-shadow: inset 0 0 0 2px var(--ink);
+	}
+
+	.tab:focus-visible,
+	.wordmark:focus-visible {
+		outline: 3px solid var(--white);
+		outline-offset: 2px;
+	}
+
+	@media (max-width: 520px) {
+		.site-nav {
+			padding: 1rem 16px 0;
+		}
+
+		.wordmark {
+			font-size: 1rem;
+		}
+
+		ul {
+			gap: 0.15rem;
+			padding: 0.2rem;
+		}
+
+		.tab {
+			padding: 0.45rem 0.7rem;
+			font-size: 0.8125rem;
+		}
+	}
+</style>

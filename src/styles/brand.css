@@ -1,0 +1,186 @@
+/*
+  Maya Tomarchio brand: hot pink ground, black ink, cyan signal, white.
+  Y2K / Frutiger Aero accents (gloss, chrome sparkles, media-player windows) are used sparingly
+  on interactive or framing pieces so the content itself stays clean and professional.
+*/
+:root {
+	--pink: #e63e7d;
+	--pink-deep: #c42764;
+	--pink-soft: #ffd3e6;
+	--ink: #111111;
+	--cyan: #00f0ff;
+	--white: #ffffff;
+
+	--font-display: 'Unbounded', 'Arial Black', sans-serif;
+	--font-tech: 'Orbitron', 'Space Grotesk', sans-serif;
+	--font-text: 'Space Grotesk', Inter, Arial, sans-serif;
+
+	--line: 3px solid var(--ink);
+	--hair: 1px solid var(--ink);
+	--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body {
+	background: var(--pink);
+	color: var(--ink);
+	font-family: var(--font-text);
+}
+
+/*
+  Y2K cursors: a glossy pink gel arrow everywhere, and a cyan one with a sparkle over anything clickable.
+  The numbers after each url are the hotspot (the arrow's tip). Text fields keep the system I-beam.
+*/
+html {
+	cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='.5' y2='1'%3E%3Cstop offset='0' stop-color='%23ffe1ef'/%3E%3Cstop offset='.45' stop-color='%23ff7fb8'/%3E%3Cstop offset='1' stop-color='%23d62c76'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M3 2v20l5.5-5 3.6 8 3.4-1.5-3.6-7.8H19z' fill='url(%23g)' stroke='%23111' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M5 6v8l4-3.7z' fill='%23fff' opacity='.8'/%3E%3C/svg%3E") 3 2, auto;
+}
+
+a,
+button,
+label,
+summary,
+select,
+[role='button'],
+input[type='radio'],
+input[type='checkbox'],
+.bubble {
+	cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='c' x1='0' y1='0' x2='.5' y2='1'%3E%3Cstop offset='0' stop-color='%23f2fdff'/%3E%3Cstop offset='.45' stop-color='%2300f0ff'/%3E%3Cstop offset='1' stop-color='%23008fa8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M3 2v20l5.5-5 3.6 8 3.4-1.5-3.6-7.8H19z' fill='url(%23c)' stroke='%23111' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M5 6v8l4-3.7z' fill='%23fff' opacity='.85'/%3E%3Cpath d='M25 3c.6 3.4 2 4.8 5 5.3-3 .5-4.4 1.9-5 5.3-.6-3.4-2-4.8-5-5.3 3-.5 4.4-1.9 5-5.3z' fill='%23ff7fb8' stroke='%23111' stroke-width='1'/%3E%3C/svg%3E") 3 2, pointer;
+}
+
+input[type='text'],
+input[type='email'],
+textarea {
+	cursor: text;
+}
+
+/* Glossy Aero pill: white-to-sky gel with a bright upper sheen. For the main actions only. */
+.btn-gloss {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.85rem 1.9rem;
+	border: 2px solid var(--ink);
+	border-radius: 999px;
+	background: linear-gradient(180deg, #ffffff 0%, #eaf9ff 46%, #b9ecff 52%, #e3f8ff 100%);
+	color: var(--ink);
+	font-family: var(--font-text);
+	font-size: 1rem;
+	font-weight: 600;
+	text-decoration: none;
+	overflow: hidden;
+	transition: transform 0.2s var(--ease-out), background 0.2s ease;
+}
+
+.btn-gloss::after {
+	content: '';
+	position: absolute;
+	inset: 3px 12% 52% 12%;
+	border-radius: 999px;
+	background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+	pointer-events: none;
+}
+
+.btn-gloss:hover {
+	background: linear-gradient(180deg, #ffffff 0%, #ccf8ff 46%, #6fe7ff 52%, #c2f6ff 100%);
+	transform: translateY(-2px);
+}
+
+.btn-gloss:active {
+	transform: translateY(0) scale(0.97);
+}
+
+.btn-gloss:focus-visible {
+	outline: 3px solid var(--white);
+	outline-offset: 3px;
+}
+
+.btn-gloss:disabled {
+	opacity: 0.55;
+	cursor: inherit;
+	transform: none;
+}
+
+/* Y2K media-player window: black frame, glossy pink title bar, three little lights */
+.window {
+	display: flex;
+	flex-direction: column;
+	border: var(--line);
+	border-radius: 14px;
+	background: var(--white);
+	overflow: hidden;
+}
+
+.window-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 0.55rem 0.9rem;
+	border-bottom: var(--line);
+	background: linear-gradient(180deg, #ff9ccb 0%, #ff6aac 48%, #f2468f 52%, #ff7fb8 100%);
+	color: var(--white);
+	font-family: var(--font-tech);
+	font-size: 0.8rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-shadow: 0 1px 0 rgba(120, 0, 50, 0.5);
+}
+
+.window-bar .lights {
+	display: flex;
+	gap: 6px;
+}
+
+.window-bar .lights span {
+	width: 12px;
+	height: 12px;
+	border: 1.5px solid var(--ink);
+	border-radius: 50%;
+	background: radial-gradient(circle at 35% 30%, #ffffff 0 18%, var(--cyan) 45%, #00a7c4 100%);
+}
+
+.window-bar .lights span:nth-child(2) {
+	background: radial-gradient(circle at 35% 30%, #ffffff 0 18%, #ffe56b 45%, #d1a600 100%);
+}
+
+.window-bar .lights span:nth-child(3) {
+	background: radial-gradient(circle at 35% 30%, #ffffff 0 18%, #ff8ac0 45%, #d62c76 100%);
+}
+
+/* chrome sparkle drawn by Sparkle.astro; twinkles gently unless motion is reduced */
+.sparkle {
+	display: block;
+	pointer-events: none;
+	animation: sparkle-twinkle 3.2s ease-in-out infinite;
+}
+
+@keyframes sparkle-twinkle {
+	0%,
+	100% {
+		transform: scale(1) rotate(0deg);
+		opacity: 1;
+	}
+	50% {
+		transform: scale(0.78) rotate(18deg);
+		opacity: 0.75;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.sparkle {
+		animation: none;
+	}
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}

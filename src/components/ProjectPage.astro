@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Sparkle from './Sparkle.astro';
 
 interface Props {
 	title: string;
@@ -8,38 +9,62 @@ interface Props {
 	alt: string;
 	url: string;
 	cta: string;
+	tags?: string[];
 }
 
-const { title, subtitle, image, alt, url, cta } = Astro.props;
+const { title, subtitle, image, alt, url, cta, tags = [] } = Astro.props;
 const base = import.meta.env.BASE_URL;
+const file = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 ---
 
-<Layout>
+<Layout current="projects" title={title}>
 	<main class="project-page">
-		<a class="back-link" href={base} aria-label="Back home">
+		<a class="back-link" href={`${base}projects`}>
 			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
+			<span>All projects</span>
 		</a>
 
 		<header class="hero">
-			<h1>{title}</h1>
+			<h1>{title}<span class="spark-anchor"><Sparkle size={40} class="title-spark" /></span></h1>
 			<p class="subtitle">{subtitle}</p>
+			{tags.length > 0 && (
+				<ul class="tags" aria-label="Built with">
+					{tags.map((tag) => <li>{tag}</li>)}
+				</ul>
+			)}
 		</header>
 
-		<section class="preview">
-			<a href={url} target="_blank" rel="noreferrer" class="preview-frame">
+		<div class="top">
+			<a href={url} target="_blank" rel="noreferrer" class="window preview">
+				<span class="window-bar">
+					<span>{file}.exe</span>
+					<span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
+				</span>
 				<img src={`${base}${image}`} alt={alt} />
+				<span class="visually-hidden">Open {title} (new tab)</span>
 			</a>
-			<div class="project-info">
-				<slot />
-				<div class="actions">
-					<a href={url} target="_blank" rel="noreferrer" class="primary-button">{cta}</a>
+
+			<section class="window about" aria-label={`About ${title}`}>
+				<div class="window-bar">
+					<span>about.txt</span>
+					<span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
 				</div>
-			</div>
-		</section>
+				<div class="window-body">
+					<slot />
+					<a href={url} target="_blank" rel="noreferrer" class="btn-gloss">{cta} <span aria-hidden="true">↗</span></a>
+				</div>
+			</section>
+		</div>
 
 		{Astro.slots.has('details') && (
-			<section class="details">
-				<slot name="details" />
+			<section class="window details" aria-label="Project details">
+				<div class="window-bar">
+					<span>readme.txt</span>
+					<span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
+				</div>
+				<div class="window-body details-body">
+					<slot name="details" />
+				</div>
 			</section>
 		)}
 	</main>
@@ -47,31 +72,28 @@ const base = import.meta.env.BASE_URL;
 
 <style>
 	.project-page {
-		--ink: #111111;
-		--line: 3px solid var(--ink);
-
-		max-width: 1100px;
+		max-width: 1240px;
 		margin: 0 auto;
-		padding: 2.5rem 8vw 6rem;
-		font-family: Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
-		color: var(--ink);
+		padding: 2.5rem 8vw 0;
 	}
 
 	.back-link {
-		display: inline-grid;
-		place-items: center;
-		width: 3rem;
-		height: 3rem;
-		margin-bottom: 3rem;
-		border: var(--line);
-		border-radius: 50%;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 2.5rem;
+		padding: 0.5rem 1rem 0.5rem 0.75rem;
+		border: 2px solid var(--ink);
+		border-radius: 999px;
 		color: var(--ink);
-		transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+		font-weight: 600;
+		text-decoration: none;
+		transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s var(--ease-out);
 	}
 
 	.back-link svg {
-		width: 1.4rem;
-		height: 1.4rem;
+		width: 1.15rem;
+		height: 1.15rem;
 		fill: none;
 		stroke: currentColor;
 		stroke-width: 2.5;
@@ -81,7 +103,7 @@ const base = import.meta.env.BASE_URL;
 
 	.back-link:hover {
 		background: var(--ink);
-		color: #ffffff;
+		color: var(--white);
 		transform: translateX(-2px);
 	}
 
@@ -91,117 +113,157 @@ const base = import.meta.env.BASE_URL;
 
 	h1 {
 		margin: 0;
-		font-size: clamp(2.5rem, 6vw, 4.5rem);
-		font-weight: 600;
-		line-height: 1;
+		font-family: var(--font-display);
+		font-size: clamp(2.25rem, 5.5vw, 4.25rem);
+		font-weight: 900;
+		line-height: 1.05;
 		letter-spacing: -0.03em;
-		color: #ffffff;
+		text-transform: uppercase;
+		color: var(--white);
+	}
+
+	.spark-anchor {
+		position: relative;
+		display: inline-block;
+		width: 0;
+		height: 0;
+	}
+
+	.spark-anchor :global(.title-spark) {
+		position: absolute;
+		bottom: 0.45em;
+		left: 2px;
 	}
 
 	.subtitle {
 		margin: 1rem 0 0;
 		font-size: 1.25rem;
+		font-weight: 600;
 	}
 
-	.preview {
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		margin: 1.25rem 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.tags li {
+		padding: 0.2rem 0.6rem;
+		border: 1.5px solid var(--ink);
+		font-size: 0.875rem;
+		font-weight: 600;
+	}
+
+	.top {
 		display: grid;
-		grid-template-columns: 1.4fr 1fr;
-		gap: 3rem;
+		grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+		gap: 2.5rem;
 		align-items: start;
 	}
 
-	.preview-frame {
-		display: block;
-		border: var(--line);
-		overflow: hidden;
+	.preview {
+		color: inherit;
+		text-decoration: none;
+		transition: transform 0.3s var(--ease-out);
 	}
 
-	.preview-frame img {
+	.preview img {
 		display: block;
 		width: 100%;
-		transition: transform 0.4s ease;
+		height: auto;
 	}
 
-	.preview-frame:hover img {
-		transform: scale(1.02);
+	.preview:hover {
+		transform: translateY(-4px) rotate(-0.4deg);
 	}
 
-	.project-info :global(p),
-	.details :global(p),
-	.details :global(li) {
+	.window-body {
+		display: grid;
+		gap: 1.25rem;
+		padding: 1.5rem 1.6rem 1.75rem;
+		background: var(--pink-soft);
+	}
+
+	.about .btn-gloss {
+		justify-self: start;
+	}
+
+	.window-body :global(p),
+	.window-body :global(li) {
 		margin: 0;
-		font-size: 1.125rem;
+		font-size: 1.0625rem;
 		line-height: 1.6;
 	}
 
-	.actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 1rem;
-		margin-top: 2rem;
-	}
-
-	.primary-button {
-		padding: 0.9rem 1.75rem;
-		border: var(--line);
-		border-radius: 999px;
-		font-weight: 600;
-		text-decoration: none;
-		transition: background-color 0.2s ease, color 0.2s ease;
-	}
-
-	.primary-button {
-		background: var(--ink);
-		color: #ffffff;
-	}
-
-	.primary-button:hover {
-		background: transparent;
-		color: var(--ink);
-	}
-
 	.details {
-		display: grid;
+		margin-top: 3rem;
+	}
+
+	.details-body {
 		gap: 2rem;
-		margin-top: 5rem;
-		padding: 2.5rem;
-		border: var(--line);
+		padding: 2rem clamp(1.5rem, 3vw, 2.75rem) 2.25rem;
 	}
 
-	.details :global(h2) {
-		margin: 0 0 0.75rem;
-		font-size: 1.5rem;
-		font-weight: 600;
+	.details-body :global(h2) {
+		margin: 0 0 0.6rem;
+		font-family: var(--font-display);
+		font-size: 1.25rem;
+		font-weight: 900;
 		letter-spacing: -0.02em;
+		text-transform: uppercase;
 	}
 
-	.details :global(ol) {
-		margin: 0;
-		padding-left: 1.4rem;
+	.details-body :global(h3) {
+		margin: 1rem 0 0.4rem;
+		font-family: var(--font-tech);
+		font-size: 0.9rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.details-body :global(ul),
+	.details-body :global(ol) {
 		display: grid;
-		gap: 0.4rem;
+		gap: 0.45rem;
+		margin: 0;
+		padding-left: 1.3rem;
+		max-width: 75ch;
+	}
+
+	.details-body :global(p) {
+		max-width: 75ch;
+	}
+
+	.details-body :global(p + p) {
+		margin-top: 0.6rem;
+	}
+
+	.details-body :global(code) {
+		padding: 0.05rem 0.35rem;
+		border: 1.5px solid var(--ink);
+		border-radius: 4px;
+		background: var(--white);
+		font-size: 0.95em;
 	}
 
 	.back-link:focus-visible,
-	.preview-frame:focus-visible,
-	.primary-button:focus-visible {
-		outline: 3px solid #ffffff;
+	.preview:focus-visible {
+		outline: 3px solid var(--white);
 		outline-offset: 3px;
+	}
+
+	@media (max-width: 860px) {
+		.top {
+			grid-template-columns: 1fr;
+		}
 	}
 
 	@media (max-width: 768px) {
 		.project-page {
-			padding: 2rem 20px 4rem;
-		}
-
-		.preview {
-			grid-template-columns: 1fr;
-			gap: 2rem;
-		}
-
-		.details {
-			margin-top: 3rem;
-			padding: 1.5rem;
+			padding: 2rem 20px 0;
 		}
 	}
 </style>

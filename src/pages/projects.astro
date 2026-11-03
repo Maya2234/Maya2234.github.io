@@ -1,38 +1,45 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { projects, courses } from '../data/projects';
-const base = import.meta.env.BASE_URL;
 ---
 
-<Layout>
+<Layout current="projects" title="Projects">
 	<main class="all-projects-page">
-		<a class="back-link" href={base} aria-label="Back home">
-			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
-		</a>
-
 		<header class="page-head">
 			<h1>Projects</h1>
-			<nav class="courses" aria-label="Course work">
+			<div class="courses" role="group" aria-label="Filter by class">
+				<button type="button" class="course-filter" data-course="all" aria-pressed="true">All</button>
 				{courses.map((course) => (
-					<a href={course.href}>{course.title}</a>
+					<button type="button" class="course-filter" data-course={course.id} aria-pressed="false">
+						{course.title} <span class="code">{course.code}</span>
+					</button>
 				))}
-			</nav>
+			</div>
 		</header>
 
-		<ul class="cards">
+		<p class="filter-status" id="filter-status" role="status" aria-live="polite"></p>
+
+		<ul class="cards" id="cards">
 			{projects.map((project) => (
-				<li>
+				<li data-course={project.course ?? ''}>
 					<a
 						href={project.href}
-						class="card"
+						class="card window"
 						{...(project.external ? { target: '_blank', rel: 'noreferrer' } : {})}
 					>
+						<span class="window-bar">
+							<span>{project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}{project.external ? '.www' : '.exe'}</span>
+							<span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
+						</span>
 						<span class="card-shot">
 							<img src={project.image} alt={project.alt} loading="lazy" />
 						</span>
 						<span class="card-text">
-							<span class="card-title">{project.title}</span>
+							<span class="card-title">{project.title}{project.external && <span class="visually-hidden"> (opens in a new tab)</span>}</span>
 							<span class="card-blurb">{project.blurb}</span>
+							<span class="tags">
+								{project.tags.map((tag) => <span class="tag">{tag}</span>)}
+							</span>
 						</span>
 					</a>
 				</li>
@@ -41,6 +48,54 @@ const base = import.meta.env.BASE_URL;
 	</main>
 </Layout>
 
+<script>
+	import { courses } from '../data/projects';
+
+	const grid = document.querySelector<HTMLUListElement>('#cards')!;
+	const status = document.querySelector<HTMLParagraphElement>('#filter-status')!;
+	const buttons = document.querySelectorAll<HTMLButtonElement>('.course-filter');
+	const items = [...grid.querySelectorAll<HTMLLIElement>(':scope > li')];
+	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	function applyFilter(course: string) {
+		// remember where every card is, so the reorder can glide instead of jump
+		const before = new Map(items.map((li) => [li, li.getBoundingClientRect()]));
+
+		const matches = items.filter((li) => course === 'all' || li.dataset.course === course);
+		const rest = items.filter((li) => !matches.includes(li));
+		[...matches, ...rest].forEach((li) => grid.append(li));
+
+		items.forEach((li) => li.classList.toggle('is-off', !matches.includes(li)));
+
+		buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.course === course)));
+
+		const title = courses.find((c) => c.id === course)?.title;
+		status.textContent =
+			course === 'all'
+				? ''
+				: matches.length
+					? `${matches.length} ${matches.length === 1 ? 'project' : 'projects'} from ${title}.`
+					: `No projects from ${title} yet.`;
+
+		if (reduceMotion) return;
+		items.forEach((li) => {
+			const from = before.get(li)!;
+			const to = li.getBoundingClientRect();
+			const dx = from.left - to.left;
+			const dy = from.top - to.top;
+			if (dx || dy) {
+				li.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], {
+					duration: 450,
+					easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+				});
+			}
+		});
+	}
+
+	buttons.forEach((b) => b.addEventListener('click', () => applyFilter(b.dataset.course!)));
+
+</script>
+
 <style>
 	.all-projects-page {
 		--ink: #111111;
@@ -48,37 +103,9 @@ const base = import.meta.env.BASE_URL;
 
 		max-width: 1240px;
 		margin: 0 auto;
-		padding: 2.5rem 8vw 8rem;
+		padding: 3.5rem 8vw 0;
 		font-family: 'Space Grotesk', Inter, Arial, sans-serif;
 		color: var(--ink);
-	}
-
-	.back-link {
-		display: inline-grid;
-		place-items: center;
-		width: 3rem;
-		height: 3rem;
-		margin-bottom: 3rem;
-		border: var(--line);
-		border-radius: 50%;
-		color: var(--ink);
-		transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
-	}
-
-	.back-link svg {
-		width: 1.4rem;
-		height: 1.4rem;
-		fill: none;
-		stroke: currentColor;
-		stroke-width: 2.5;
-		stroke-linecap: round;
-		stroke-linejoin: round;
-	}
-
-	.back-link:hover {
-		background: var(--ink);
-		color: #ffffff;
-		transform: translateX(-2px);
 	}
 
 	.page-head {
@@ -92,38 +119,82 @@ const base = import.meta.env.BASE_URL;
 
 	h1 {
 		margin: 0;
-		font-family: 'Super Ramen', 'Arial Rounded MT Bold', sans-serif;
-		font-size: clamp(3rem, 8vw, 6rem);
-		font-weight: 400;
+		font-family: var(--font-display);
+		font-size: clamp(2.5rem, 6vw, 4.75rem);
+		font-weight: 900;
 		line-height: 1;
+		letter-spacing: -0.03em;
+		text-transform: uppercase;
 		color: #ffffff;
 	}
 
 	.courses {
 		display: flex;
 		flex-wrap: wrap;
+		align-items: center;
 		gap: 0.75rem;
 	}
 
-	.courses a {
-		padding: 0.8rem 1.4rem;
+	.courses-label {
+		font-weight: 600;
+		margin-right: 0.25rem;
+	}
+
+	.course-filter {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		padding: 0.7rem 1.3rem;
 		border: var(--line);
 		border-radius: 999px;
+		background: transparent;
 		color: var(--ink);
+		font: inherit;
 		font-size: 1rem;
 		font-weight: 600;
-		text-decoration: none;
 		transition: background-color 0.2s ease, color 0.2s ease;
 	}
 
-	.courses a:hover {
-		background: var(--ink);
-		color: #ffffff;
+	.course-filter .code {
+		font-family: var(--font-tech);
+		font-size: 0.75rem;
+		letter-spacing: 0.06em;
+	}
+
+	.course-filter:hover {
+		background: rgba(255, 255, 255, 0.4);
+	}
+
+	/* the selected class gets the glossy Aero gel, like the open nav tab */
+	.course-filter[aria-pressed='true'] {
+		background: linear-gradient(180deg, #ffffff 0%, #eaf9ff 46%, #b9ecff 52%, #e3f8ff 100%);
+	}
+
+	.filter-status {
+		min-height: 1.5em;
+		margin: -2.5rem 0 1rem;
+		font-weight: 600;
+	}
+
+	/* projects outside the chosen class: greyed out but still open, and brighten on hover */
+	.cards li {
+		transition: opacity 0.3s ease, filter 0.3s ease;
+	}
+
+	.cards li.is-off {
+		opacity: 0.4;
+		filter: grayscale(1);
+	}
+
+	.cards li.is-off:hover,
+	.cards li.is-off:focus-within {
+		opacity: 0.85;
+		filter: grayscale(0.4);
 	}
 
 	.cards {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 3rem 2.5rem;
 		margin: 0;
 		padding: 0;
@@ -131,18 +202,25 @@ const base = import.meta.env.BASE_URL;
 	}
 
 	.card {
-		display: flex;
-		flex-direction: column;
 		height: 100%;
 		color: var(--ink);
 		text-decoration: none;
+		transition: transform 0.3s var(--ease-out);
+	}
+
+	.card:hover {
+		transform: translateY(-6px) rotate(-0.6deg);
+	}
+
+	.cards li:nth-child(even) .card:hover {
+		transform: translateY(-6px) rotate(0.6deg);
 	}
 
 	.card-shot {
 		display: block;
 		aspect-ratio: 16 / 10;
 		overflow: hidden;
-		border: var(--line);
+		border-bottom: var(--line);
 		background: var(--ink);
 	}
 
@@ -151,18 +229,18 @@ const base = import.meta.env.BASE_URL;
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		transition: transform 0.4s ease;
+		transition: transform 0.5s var(--ease-out);
 	}
 
 	.card:hover .card-shot img,
 	.card:focus-visible .card-shot img {
-		transform: scale(1.04);
+		transform: scale(1.05);
 	}
 
 	.card-text {
 		display: grid;
 		gap: 0.4rem;
-		padding-top: 1rem;
+		padding: 1rem 1.25rem 1.25rem;
 	}
 
 	.card-title {
@@ -171,19 +249,27 @@ const base = import.meta.env.BASE_URL;
 		letter-spacing: -0.02em;
 	}
 
-	.card:hover .card-title {
-		text-decoration: underline;
-		text-decoration-thickness: 2px;
-		text-underline-offset: 0.18em;
-	}
-
 	.card-blurb {
 		font-size: 1rem;
 		line-height: 1.5;
 	}
 
-	.back-link:focus-visible,
-	.courses a:focus-visible,
+	/* thin outlined label boxes, like the mood board's editorial tags */
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		margin-top: 0.5rem;
+	}
+
+	.tag {
+		padding: 0.2rem 0.55rem;
+		border: 1.5px solid var(--ink);
+		font-size: 0.8125rem;
+		font-weight: 600;
+	}
+
+	.course-filter:focus-visible,
 	.card:focus-visible {
 		outline: 3px solid #ffffff;
 		outline-offset: 4px;
@@ -191,11 +277,42 @@ const base = import.meta.env.BASE_URL;
 
 	@media (max-width: 768px) {
 		.all-projects-page {
-			padding: 2rem 20px 5rem;
+			padding: 2.5rem 20px 0;
 		}
 
 		.page-head {
 			margin-bottom: 2.5rem;
+		}
+
+		.cards {
+			grid-template-columns: 1fr;
+		}
+
+		/* small tech label stacked over a single row of compact links */
+		.courses {
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			gap: 0.5rem;
+			width: 100%;
+			padding-top: 1.5rem;
+			position: relative;
+		}
+
+		.courses-label {
+			position: absolute;
+			top: 0;
+			left: 0;
+			font-family: var(--font-tech);
+			font-size: 11px;
+			letter-spacing: 0.12em;
+			text-transform: uppercase;
+		}
+
+		.course-filter {
+			flex-shrink: 0;
+			padding: 0.4rem 0.9rem;
+			font-size: 0.8125rem;
+			border-width: 2px;
 		}
 	}
 </style>

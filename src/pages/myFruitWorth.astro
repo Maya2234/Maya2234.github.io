@@ -1,249 +1,84 @@
 ---
-import Layout from '../layouts/Layout.astro';
-const base = import.meta.env.BASE_URL;
+import ProjectPage from '../components/ProjectPage.astro';
 ---
 
-<Layout>
-  <main class="project-page">
-    <a class="back-link" href={`${base}CG_class/`}>Back to Computer Graphics</a>
+<ProjectPage
+	title="My Fruit Worth"
+	subtitle="Pick all of the fruit growing in your garden."
+	image="myFruitWorth.png"
+	alt="Title screen of My Fruit Worth, a garden fruit-picking game"
+	url="https://maya2234.github.io/myFruitWorth/"
+	cta="Play the game"
+	tags={['JavaScript', 'HTML Canvas', '3D graphics']}
+>
+	<p>
+		A short game prototype where the player collects fruit from the garden while practicing quick decision-making
+		and visual recognition. Made for Computer Graphics 5160, with every 3D view projected and drawn by hand.
+	</p>
 
-    <header class="hero">
-      <h1>My Fruit Worth</h1>
-      <p class="subtitle">Pick all of the fruit growing in your garden.</p>
-    </header>
+	<Fragment slot="details">
+		<div>
+			<h2>Controls &amp; gameplay</h2>
+			<ul>
+				<li><strong>Movement:</strong> move forward or backward in the direction you are facing, and turn with the <strong>Left</strong> and <strong>Right</strong> arrow keys.</li>
+				<li><strong>Interaction:</strong> when you are close enough to a fruit, press <strong>Spacebar</strong> to pick it and put it in your basket.</li>
+				<li><strong>Restart:</strong> press <strong>R</strong> to restart at any time.</li>
+				<li><strong>Graphics:</strong> switch between three visual styles with the radio buttons.</li>
+				<li><strong>Winning:</strong> a victory screen appears once every fruit is collected; press <strong>R</strong> to play again.</li>
+			</ul>
+		</div>
 
-    <section class="preview-card">
-      <img src={`${base}myFruitWorth.png`} alt="My Fruit Worth project preview" class="project-image" />
-      <div class="project-info">
-        <p>
-          A short game prototype where the player collects fruit from the garden while practicing
-          quick decision-making and visual recognition.
-        </p>
-        <div class="actions">
-          <a href="https://maya2234.github.io/myFruitWorth/" target="_blank" rel="noreferrer" class="primary-button">
-            Play the game
-          </a>
-          <a href={base} class="secondary-button">Home</a>
-        </div>
-      </div>
-    </section>
+		<div>
+			<h2>Technical overview</h2>
+			<p>
+				Each object type in the game (<code>house</code>, <code>bush</code>, <code>fruit</code>) is defined as a set of
+				vertices, edges and faces built from those vertices.
+			</p>
+			<p>
+				Object instances are created with their own position and scale, then projected with the <strong>pinhole camera method</strong>: dividing x and y by z to project depth.
+			</p>
+		</div>
 
-    <section class="documentation">
-      <h3>Controls &amp; Gameplay</h3>
-      <ul>
-        <li><strong>Movement:</strong> Move forward or backward in the direction you are facing. Rotate using the <strong>Left</strong> and <strong>Right</strong> arrow keys.</li>
-        <li><strong>Interaction:</strong> When close enough to a fruit object, press <strong>Spacebar</strong> to pick it up and place it in your basket.</li>
-        <li><strong>Restart:</strong> Press <strong>R</strong> to restart the game at any time.</li>
-        <li><strong>Graphics:</strong> Toggle between 3 different visual styles via radio buttons.</li>
-        <li><strong>Winning Condition:</strong> A victory screen appears once all fruits have been collected. You can press <strong>R</strong> to play again.</li>
-      </ul>
+		<div>
+			<h2>Graphics pipeline levels</h2>
+			<h3>Level 1</h3>
+			<ol>
+				<li>Loop through each object instance, skipping any collected fruit.</li>
+				<li>Apply positioning, scaling and vertex projection to each model.</li>
+				<li><strong>Depth sorting:</strong> sort from largest to smallest z so geometry furthest from the camera is drawn first and the nearest draws on top.</li>
+				<li><strong>Rendering:</strong> draw faces with HTML5 Canvas: <code>beginPath()</code>, step through the face's vertices with <code>moveTo()</code>, then <code>closePath()</code> and <code>fill()</code>.</li>
+			</ol>
+			<h3>Level 2</h3>
+			<ol>
+				<li>Initialize a 320 × 200 grid.</li>
+				<li>Loop through all object instances, skipping collected fruit.</li>
+				<li>Scale, position and project every vertex onto the grid, keeping only points in front of the camera.</li>
+				<li>Draw each edge from (u₁, v₁), stepping pixel by pixel along x and adding the slope on each step to colour the line.</li>
+			</ol>
+			<h3>Level 3</h3>
+			<ol>
+				<li>Initialize the grid and skip collected fruit.</li>
+				<li>Position and scale each object instance and store its projected vertices.</li>
+				<li>For each object, loop through its visible faces, clipping geometry behind the camera.</li>
+				<li><strong>Triangle rasterization:</strong> find the bounding box of each face's three vertices, then test every pixel with <strong>barycentric coordinates</strong> to fill only the pixels inside the triangle.</li>
+			</ol>
+		</div>
 
-      <h3>Technical Overview</h3>
-      <p>
-        Each object type used in the game (<code>house</code>, <code>bush</code>, <code>fruit</code>) is defined as a set of vertices, edges, and faces constructed from the original vertices.
-      </p>
-      <p>
-        Object instances are created with specific position and scaling parameters, then projected using the <strong>pinhole camera method</strong> (dividing $x$ and $y$ by $z$ to project depth).
-      </p>
+		<div>
+			<h2>Known issues</h2>
+			<ul>
+				<li><strong>Collision detection:</strong> collisions are not fully working. Walking into a house face head-on is blocked, but approaching at an angle after turning lets the player pass through.</li>
+			</ul>
+		</div>
 
-      <h3>Graphics Pipeline Levels</h3>
-
-      <h4>Level 1</h4>
-      <ol>
-        <li>Loop through each object instance (skipping any collected fruit).</li>
-        <li>Apply positioning, scaling, and vertex projection for each model.</li>
-        <li><strong>Depth Sorting:</strong> Sort depths from largest to smallest $z$-value so that geometry furthest from the camera is drawn first (ensuring the smallest $z$ in front of the camera draws last/on top).</li>
-        <li><strong>Rendering:</strong> Draw faces using HTML5 Canvas methods: <code>beginPath()</code>, step through face vertices with <code>moveTo()</code>, then finish with <code>closePath()</code> and <code>fill()</code>.</li>
-      </ol>
-
-      <h4>Level 2</h4>
-      <ol>
-        <li>Initialize a grid of $320 \times 200$.</li>
-        <li>Loop through all object instances (skipping collected fruit).</li>
-        <li>Apply scaling, positioning, and projection to the grid for all vertices, pushing valid points to an array (skipping geometry behind the camera).</li>
-        <li>Loop through projected vertices and draw each edge starting at $(u_1, v_1)$, stepping pixel-by-pixel along the X-axis and adding the slope on each increment to color the line.</li>
-      </ol>
-
-      <h4>Level 3</h4>
-      <ol>
-        <li>Initialize the grid and skip collected fruit.</li>
-        <li>Apply positioning and scaling to object instances and store projected vertices.</li>
-        <li>For each object, loop through visible faces (clipping geometry behind the camera).</li>
-        <li><strong>Triangle Rasterization:</strong> Calculate the bounding box for the 3 vertices of each face, then evaluate every pixel using <strong>barycentric coordinates</strong> to fill only pixels contained inside the triangle.</li>
-      </ol>
-
-      <h3>Known Issues &amp; Failures</h3>
-      <ul>
-        <li><strong>Collision Detection:</strong> Object collisions are not fully functional. While collision prevention works when approaching house faces head-on, approaching at an angle (after rotating the camera) allows the player to pass through solid faces.</li>
-      </ul>
-
-      <h3>Future Improvements</h3>
-      <ul>
-        <li><strong>Dynamic Day/Night Cycle:</strong> Add a setting sun that acts as a game timer, causing the sky to gradually darken.</li>
-        <li><strong>Weather System:</strong> Introduce dynamic weather and clouds.</li>
-        <li><strong>Basket UI:</strong> Add a visual basket HUD element that fills up as fruits are collected.</li>
-        <li><strong>Social Features:</strong> Implement a daily leaderboard.</li>
-      </ul>
-    </section>
-  </main>
-</Layout>
-
-<style>
-  .project-page {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 2rem 1.5rem 4rem;
-    color: #111827;
-  }
-
-  .back-link {
-    display: inline-block;
-    margin-bottom: 1.5rem;
-    color: #1d4ed8;
-    text-decoration: none;
-    font-weight: 600;
-  }
-
-  .hero {
-    margin-bottom: 2rem;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: clamp(2rem, 4vw, 3rem);
-  }
-
-  .subtitle {
-    margin-top: 0.5rem;
-    font-size: 1.1rem;
-    color: #4b5563;
-  }
-
-  .preview-card {
-    display: grid;
-    grid-template-columns: 1.2fr 0.8fr;
-    gap: 2rem;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(148, 163, 184, 0.4);
-    border-radius: 18px;
-    padding: 1.5rem;
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
-  }
-
-  .project-image {
-    width: 100%;
-    display: block;
-    border-radius: 12px;
-    border: 2px solid #dbeafe;
-  }
-  
-    .project-image:hover{
-    border-color: #1d4ed8;
-    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.18);
-    transform: translateY(-1px);        
-  }
-
-  .project-info {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .project-info p {
-    margin: 0;
-    font-size: 1rem;
-    line-height: 1.7;
-    color: #374151;
-  }
-
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-top: 0.5rem;
-  }
-
-  .primary-button,
-  .secondary-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.8rem 1.2rem;
-    border-radius: 10px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: transform 0.2s ease, opacity 0.2s ease;
-  }
-
-  .primary-button {
-    background: linear-gradient(83.21deg, #3245ff 0%, #bc52ee 100%);
-    color: white;
-  }
-
-  .secondary-button {
-    background: #e2e8f0;
-    color: #0f172a;
-  }
-
-  .primary-button:hover,
-  .secondary-button:hover,
-  .back-link:hover {
-    opacity: 0.92;
-    transform: translateY(-1px);
-  }
-
-  .documentation {
-    margin-top: 2.5rem;
-    background: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    border-radius: 18px;
-    padding: 1.5rem;
-  }
-
-  .documentation h2 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-  }
-
-  .documentation h3 {
-    margin-top: 1.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .documentation h4 {
-    margin-top: 1.25rem;
-    margin-bottom: 0.5rem;
-    font-size: 1.05rem;
-  }
-
-  .documentation p,
-  .documentation li {
-    margin: 0;
-    line-height: 1.7;
-    color: #374151;
-  }
-
-  .documentation ul,
-  .documentation ol {
-    margin: 0.75rem 0 0;
-    padding-left: 1.4rem;
-  }
-
-  .documentation li + li {
-    margin-top: 0.45rem;
-  }
-
-  .documentation code {
-    background: #eef2ff;
-    border-radius: 4px;
-    padding: 0.1rem 0.35rem;
-    font-family: 'SFMono-Regular', Consolas, monospace;
-  }
-
-  @media (max-width: 768px) {
-    .preview-card {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
+		<div>
+			<h2>Future improvements</h2>
+			<ul>
+				<li><strong>Day/night cycle:</strong> a setting sun as the game timer, gradually darkening the sky.</li>
+				<li><strong>Weather:</strong> dynamic weather and clouds.</li>
+				<li><strong>Basket UI:</strong> a basket on screen that fills up as fruit is collected.</li>
+				<li><strong>Social:</strong> a daily leaderboard.</li>
+			</ul>
+		</div>
+	</Fragment>
+</ProjectPage>
