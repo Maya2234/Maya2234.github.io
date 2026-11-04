@@ -1,6 +1,6 @@
 ---
 // Tools pulled from Maya's public GitHub repos (languages + package.json dependencies), Nov 2026.
-// Each entry names a repo it shows up in, shown on hover/focus.
+// `used` records which repos each tool came from, for reference when updating this list.
 const groups = [
 	{
 		label: 'Languages',
@@ -46,10 +46,9 @@ const groups = [
 				<h2 class="group-label">{group.label}</h2>
 				<ul class="bubbles">
 					{group.items.map((item) => (
-						<li class="bubble" tabindex="0" aria-describedby={`used-${item.name.replace(/\W+/g, '')}`}>
+						<li class="bubble">
 							<span class="orb" aria-hidden="true"></span>
 							{item.name}
-							<span class="used" role="tooltip" id={`used-${item.name.replace(/\W+/g, '')}`}>Used in {item.used}</span>
 						</li>
 					))}
 				</ul>
@@ -108,7 +107,6 @@ const groups = [
 		background: linear-gradient(180deg, #ffffff 0%, #eaf9ff 46%, #c4efff 52%, #e9fbff 100%);
 		font-size: 0.975rem;
 		font-weight: 600;
-		transition: transform 0.2s var(--ease-out);
 	}
 
 	.orb {
@@ -127,43 +125,6 @@ const groups = [
 		background: radial-gradient(circle at 35% 30%, #ffffff 0 18%, #ffe56b 45%, #d1a600 100%);
 	}
 
-	.bubble:hover,
-	.bubble:focus-visible {
-		transform: translateY(-3px);
-		outline: none;
-	}
-
-	.bubble:focus-visible {
-		box-shadow: 0 0 0 3px var(--cyan);
-	}
-
-	.used {
-		position: absolute;
-		bottom: calc(100% + 8px);
-		left: 50%;
-		z-index: 3;
-		width: max-content;
-		max-width: 16rem;
-		padding: 0.4rem 0.65rem;
-		border: 2px solid var(--ink);
-		border-radius: 8px;
-		background: var(--ink);
-		color: var(--white);
-		font-size: 0.8125rem;
-		font-weight: 400;
-		line-height: 1.35;
-		opacity: 0;
-		pointer-events: none;
-		transform: translate(-50%, 4px);
-		transition: opacity 0.15s ease, transform 0.15s ease;
-	}
-
-	.bubble:hover .used,
-	.bubble:focus-visible .used {
-		opacity: 1;
-		transform: translate(-50%, 0);
-	}
-
 	/* sits under the bubbles, lined up with them */
 	.gh-link {
 		display: grid;
@@ -176,19 +137,12 @@ const groups = [
 		border-radius: 50%;
 		background: var(--white);
 		color: var(--ink);
-		transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s var(--ease-out);
 	}
 
 	.gh-link svg {
 		width: 1.3rem;
 		height: 1.3rem;
 		fill: currentColor;
-	}
-
-	.gh-link:hover {
-		background: var(--ink);
-		color: var(--white);
-		transform: translateY(-2px);
 	}
 
 	.gh-link:focus-visible {
