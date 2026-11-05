@@ -1,0 +1,289 @@
+---
+// The homepage canvas: the home button, zoom buttons in the bottom-right corner,
+// click-to-fit, links that fly around the canvas, and the scattered layout of the project pages.
+// The camera itself lives in src/scripts/camera.ts.
+import Sparkle from './Sparkle.astro';
+import { getLang, localize, t } from '../i18n';
+
+const lang = getLang(Astro.url);
+const w = t(lang);
+---
+
+<!-- always in the top-left corner: back to the home screen, as if the page had just loaded -->
+<a class="btn-gloss home-btn" href={localize(lang)} aria-label={w('nav.home')}>
+	<Sparkle size={18} />
+	<span>MT</span>
+</a>
+
+<div class="zoom-controls" role="group" aria-label={w('canvas.zoom')} data-home={w('canvas.home')} data-projects={w('canvas.projects')}>
+	<button type="button" class="zoom-btn" data-zoom="out" aria-label={w('canvas.zoomOut')}>
+		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" /></svg>
+	</button>
+	<button type="button" class="zoom-level" data-zoom="reset" aria-label={w('canvas.reset')}>100%</button>
+	<button type="button" class="zoom-btn" data-zoom="in" aria-label={w('canvas.zoomIn')}>
+		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+	</button>
+	<button type="button" class="zoom-btn" data-zoom="all" aria-label={w('canvas.all')}>
+		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" /></svg>
+	</button>
+</div>
+
+<script>
+	import {
+		fitAll,
+		getCamera,
+		goToGroup,
+		goToView,
+		groupAt,
+		initCamera,
+		moveTo,
+		onCamera,
+		registerGroup,
+		registerView,
+		worldRect,
+		zoomAt,
+	} from '../scripts/camera';
+
+	const base = import.meta.env.BASE_URL;
+	const root = document.documentElement;
+	const world = document.querySelector<HTMLElement>('.world')!;
+	const stage = document.querySelector<HTMLElement>('.stage')!;
+	const projectsBay = document.querySelector<HTMLElement>('.projects-bay');
+	const bookBay = document.querySelector<HTMLElement>('.book-bay');
+	const field = document.querySelector<HTMLElement>('.project-field');
+	const pages = [...document.querySelectorAll<HTMLElement>('.canvas-project')];
+
+	initCamera(world);
+
+	// ---------- the groups: each can be fitted to the screen when zoomed out ----------
+
+	const names = document.querySelector<HTMLElement>('.zoom-controls')!.dataset;
+	registerGroup({ id: 'home', el: stage, label: names.home });
+	if (projectsBay) registerGroup({ id: 'projects', el: projectsBay, label: names.projects });
+	if (bookBay) registerGroup({ id: 'book', el: bookBay });
+	pages.forEach((el) => registerGroup({ id: el.dataset.canvasGroup!, el, label: el.dataset.label }));
+
+	registerView('home', (instant) => moveTo({ s: 1, x: 0, y: 0 }, instant));
+
+	// this page's home address (/ or /it/), so in-page links to it fly instead of reloading
+	const home = new URL(document.querySelector<HTMLAnchorElement>('.home-btn')?.href ?? base, location.href).pathname;
+
+	// ---------- scatter the project pages below the top row ----------
+
+	function layoutField() {
+		if (!field || !pages.length) return;
+		const W = root.clientWidth;
+		const tops = [stage, projectsBay, bookBay].filter(Boolean).map((el) => {
+			const r = worldRect(el!);
+			return r.y + r.h;
+		});
+		const rowTop = Math.max(...tops) + 360;
+		// three loose columns under the gallery, home and the book; each page drifts a little off its column
+		const columns = [-W, 0, W];
+		const placement = [
+			{ col: 0, dx: 0.04, dy: 0 },
+			{ col: 1, dx: 0.1, dy: 260 },
+			{ col: 2, dx: 0.02, dy: 120 },
+			{ col: 0, dx: 0.12, dy: 320 },
+		];
+		const colBottom = [rowTop, rowTop, rowTop];
+		pages.forEach((el, i) => {
+			const p = placement[i % placement.length];
+			const pageW = el.offsetWidth;
+			const x = columns[p.col] + Math.max(0, W - pageW) / 2 + (p.dx - 0.06) * W;
+			const y = colBottom[p.col] + p.dy;
+			el.style.left = `${Math.round(x)}px`;
+			el.style.top = `${Math.round(y)}px`;
+			colBottom[p.col] = y + el.offsetHeight + 280;
+		});
+	}
+
+	layoutField();
+	document.fonts?.ready.then(layoutField);
+	addEventListener('load', layoutField);
+	const ro = new ResizeObserver(() => layoutField());
+	[stage, projectsBay, bookBay, ...pages].forEach((el) => el && ro.observe(el));
+
+	// ---------- the home button: glide back to the starting view ----------
+
+	document.querySelector<HTMLAnchorElement>('.home-btn')!.addEventListener('click', (e) => {
+		if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+		e.preventDefault();
+		goToView('home');
+	});
+
+	// ---------- zoom buttons ----------
+
+	const level = document.querySelector<HTMLButtonElement>('.zoom-level')!;
+	onCamera((c) => (level.textContent = `${Math.round(c.s * 100)}%`));
+	document.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach((b) =>
+		b.addEventListener('click', () => {
+			const z = b.dataset.zoom;
+			if (z === 'in') zoomAt(1.4);
+			else if (z === 'out') zoomAt(1 / 1.4);
+			else if (z === 'all') fitAll();
+			else zoomAt(1 / getCamera().s);
+		}),
+	);
+
+	// ---------- zoomed out: a click only ever zooms in ----------
+	// on a page: fit that page to the width of the screen, keeping the spot you clicked level;
+	// on empty space (or a page already as wide as the screen): zoom in where you clicked
+
+	addEventListener('click', (e) => {
+		if (!root.classList.contains('zoomed-out')) return;
+		if (e.defaultPrevented || (e.target as HTMLElement).closest('.zoom-controls, .book-tab, .home-btn, .wall-overlay')) return;
+		e.preventDefault();
+		const c = getCamera();
+		const wx = c.x + e.clientX / c.s;
+		const wy = c.y + e.clientY / c.s;
+		const g = groupAt(wx, wy);
+		const r = g && worldRect(g.el);
+		const fit = r ? Math.min(1.25, root.clientWidth / r.w) : 0;
+		if (!r || fit <= c.s * 1.02) return zoomAt(2, e.clientX, e.clientY);
+		moveTo({ s: fit, x: r.x + r.w / 2 - root.clientWidth / fit / 2, y: wy - e.clientY / fit });
+	});
+
+	// ---------- links that fly around the canvas instead of leaving the page ----------
+
+	const HASHES: Record<string, string> = { '#projects': 'projects', '#home': 'home', '#book': 'book' };
+	const onHome = (a: HTMLAnchorElement) => a.origin === location.origin && (a.pathname === home || a.pathname === location.pathname);
+
+	document.addEventListener('click', (e) => {
+		if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+		const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href]');
+		if (!a || a.target === '_blank') return;
+		const hashView = HASHES[a.hash];
+		if (hashView && onHome(a)) {
+			e.preventDefault();
+			goToView(hashView);
+			return;
+		}
+		// a project card or carousel card: fly to that project's page on the canvas
+		const page = pages.find((p) => p.dataset.path && new URL(p.dataset.path, location.href).pathname.replace(/\/$/, '') === a.pathname.replace(/\/$/, ''));
+		if (page) {
+			e.preventDefault();
+			goToGroup(page.dataset.canvasGroup!);
+		}
+	});
+
+	// arriving with #projects / #home / #book (from a project page or the message wall): start there
+	const start = HASHES[location.hash];
+	if (start) {
+		history.replaceState(null, '', location.pathname + location.search);
+		requestAnimationFrame(() => {
+			layoutField();
+			goToView(start, true);
+			dispatchEvent(new CustomEvent('canvas:arrived', { detail: start }));
+		});
+	}
+</script>
+
+<style>
+	/* the persistent home button, where the MT wordmark sits in the nav on other pages */
+	.home-btn {
+		position: fixed;
+		top: 1rem;
+		left: 4vw;
+		z-index: 40;
+		gap: 0.35rem;
+		padding: 0.45rem 1rem 0.45rem 0.75rem;
+		font-family: var(--font-display);
+		font-size: 1rem;
+		letter-spacing: 0.02em;
+	}
+
+	@media (max-width: 520px) {
+		.home-btn {
+			left: 16px;
+			padding: 0.4rem 0.85rem 0.4rem 0.65rem;
+			font-size: 0.9rem;
+		}
+	}
+
+	/* small glossy zoom buttons pinned to the bottom-right corner */
+	.zoom-controls {
+		position: fixed;
+		right: 16px;
+		bottom: 16px;
+		z-index: 40;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		padding: 4px;
+		border: 2px solid var(--ink);
+		border-radius: 999px;
+		background: var(--pink-soft);
+	}
+
+	.zoom-btn,
+	.zoom-level {
+		position: relative;
+		display: grid;
+		place-items: center;
+		height: 2.25rem;
+		padding: 0;
+		border: 1.5px solid var(--ink);
+		border-radius: 999px;
+		background: linear-gradient(180deg, #ffffff 0%, #eaf9ff 46%, #b9ecff 52%, #e3f8ff 100%);
+		color: var(--ink);
+		overflow: hidden;
+	}
+
+	.zoom-btn {
+		width: 2.25rem;
+	}
+
+	.zoom-level {
+		min-width: 3.5rem;
+		padding: 0 0.5rem;
+		font: 700 0.75rem var(--font-tech);
+		letter-spacing: 0.04em;
+	}
+
+	.zoom-btn::after,
+	.zoom-level::after {
+		content: '';
+		position: absolute;
+		inset: 2px 18% 54% 18%;
+		border-radius: 999px;
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+		pointer-events: none;
+	}
+
+	.zoom-btn:hover,
+	.zoom-level:hover {
+		background: linear-gradient(180deg, #ffffff 0%, #ccf8ff 46%, #6fe7ff 52%, #c2f6ff 100%);
+	}
+
+	.zoom-btn svg {
+		width: 1rem;
+		height: 1rem;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2.5;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	.zoom-btn:focus-visible,
+	.zoom-level:focus-visible {
+		outline: 3px solid var(--white);
+		outline-offset: 2px;
+	}
+
+	/* zoomed out, the pages are pictures: nothing inside reacts, and a click fits or zooms */
+	:global(html.zoomed-out .world *) {
+		pointer-events: none !important;
+	}
+
+	:global(html.zoomed-out .viewport) {
+		cursor: zoom-in;
+	}
+
+	:global(html.is-dragging),
+	:global(html.is-dragging *) {
+		cursor: grabbing !important;
+		user-select: none;
+	}
+</style>

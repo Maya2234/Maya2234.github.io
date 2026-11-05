@@ -1,5 +1,6 @@
 ---
 import Sparkle from './Sparkle.astro';
+import { getLang, localize, t } from '../i18n';
 
 interface Props {
 	showWallLink?: boolean;
@@ -7,41 +8,45 @@ interface Props {
 
 const { showWallLink = true } = Astro.props;
 const base = import.meta.env.BASE_URL;
+const lang = getLang(Astro.url);
+const w = t(lang);
 ---
 
 <footer class="site-foot">
 	<div class="window foot-window">
 		<div class="window-bar">
 			<span></span>
-			<span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
+			<span class="lights" aria-hidden="true"><span></span></span>
 		</div>
 		<div class="foot-body">
 			<Sparkle size={30} class="foot-spark" delay={0.8} />
 			<div class="foot-main">
-				<p class="foot-line">I want to realize your <span class="arrow-from">vision</span></p>
+				<p class="foot-line">{w('footer.line')} <span class="arrow-from">{w('footer.vision')}</span></p>
 
-				<ul class="contact">
-					<li><a href="mailto:mayato223@gmail.com">mayato223@gmail.com</a></li>
-					<li><a href="tel:+12162134834" class="arrow-to">+1 216-213-4834</a></li>
-				</ul>
+				<div class="foot-row">
+					<ul class="contact">
+						<li><a href="mailto:mayato223@gmail.com">mayato223@gmail.com</a></li>
+						<li><a href="tel:+12162134834" class="arrow-to">+1 216-213-4834</a></li>
+					</ul>
+
+					<div class="foot-actions">
+						<a href={`${base}resume.pdf`} class="btn-gloss resume" download="Maya-Tomarchio-Resume.pdf">
+							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 20h16" /></svg>
+							{w('footer.resume')}
+						</a>
+						{showWallLink && <a href={localize(lang, 'message-wall')} class="btn-gloss">{w('footer.wall')}</a>}
+						<div class="socials">
+							<a href="https://github.com/maya2234" target="_blank" rel="noreferrer" aria-label="GitHub">
+								<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.82-.26.82-.58v-2.03c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .3" /></svg>
+							</a>
+							<a href="https://www.linkedin.com/in/MayaTomarchio" target="_blank" rel="noreferrer" aria-label="LinkedIn">
+								<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z" /></svg>
+							</a>
+						</div>
+					</div>
+				</div>
 
 				<svg class="foot-arrow" aria-hidden="true"><path class="arrow-line" /><path class="arrow-head" /></svg>
-			</div>
-
-			<div class:list={['foot-actions', { solo: !showWallLink }]}>
-				<a href={`${base}resume.pdf`} class="btn-gloss resume" download="Maya-Tomarchio-Resume.pdf">
-					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 20h16" /></svg>
-					Resume
-				</a>
-				{showWallLink && <a href={`${base}message-wall`} class="btn-gloss">Sign the message wall</a>}
-				<div class="socials">
-					<a href="https://github.com/maya2234" target="_blank" rel="noreferrer" aria-label="GitHub">
-						<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.82-.26.82-.58v-2.03c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18a4.65 4.65 0 0 1 1.23 3.22c0 4.61-2.8 5.63-5.48 5.92.42.36.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .3" /></svg>
-					</a>
-					<a href="https://www.linkedin.com/in/MayaTomarchio" target="_blank" rel="noreferrer" aria-label="LinkedIn">
-						<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z" /></svg>
-					</a>
-				</div>
 			</div>
 		</div>
 	</div>
@@ -59,27 +64,41 @@ const base = import.meta.env.BASE_URL;
 		const line = svg.querySelector<SVGPathElement>('.arrow-line')!;
 		const head = svg.querySelector<SVGPathElement>('.arrow-head')!;
 
+		// measured on screen, then divided by the zoom so it's right even when the homepage canvas is zoomed
+		const local = (r: DOMRect, s: number) => ({ left: r.left / s, right: r.right / s, top: r.top / s, bottom: r.bottom / s, width: r.width / s, height: r.height / s });
 		const draw = () => {
-			const box = main.getBoundingClientRect();
-			const a = from.getBoundingClientRect();
-			const b = to.getBoundingClientRect();
+			const zoom = main.getBoundingClientRect().width / main.offsetWidth || 1;
+			const box = local(main.getBoundingClientRect(), zoom);
+			const a = local(from.getBoundingClientRect(), zoom);
+			const b = local(to.getBoundingClientRect(), zoom);
 			svg.setAttribute('width', String(box.width));
 			svg.setAttribute('height', String(box.height));
 
-			// leave from just under "vision", swing out past the right edge of the contact links,
-			// and come into the phone number from its right so the line never crosses any text
-			const links = [...main.querySelectorAll<HTMLElement>('.contact a')];
-			const rightmost = Math.max(...links.map((l) => l.getBoundingClientRect().right)) - box.left;
+			// leave from just under "vision" and land on the phone number. Normally it lands on top of the number;
+			// when the email stacks above it (phones), it swings out right of the links and comes in from the side instead
 			const sx = a.left - box.left + a.width * 0.8;
-			const sy = a.bottom - box.top + 2;
-			const ex = b.right - box.left + 10;
-			const ey = b.top - box.top + b.height * 0.5;
-			// the swing reaches 3rem further right than the links; the ends stay on "vision" and the number
-			const extra = 3 * parseFloat(getComputedStyle(document.documentElement).fontSize);
-			const c1x = Math.max(sx + 40, rightmost + 36) + extra;
-			const c1y = sy + 18;
-			const c2x = Math.max(ex + 44, rightmost + 44) + extra;
-			const c2y = ey;
+			const sy = a.bottom - box.top + 4;
+			const links = [...main.querySelectorAll<HTMLElement>('.contact a')].map((l) => local(l.getBoundingClientRect(), zoom));
+			const stacked = links.some((l) => l.bottom <= b.top + 1);
+			let ex: number, ey: number, c1x: number, c1y: number, c2x: number, c2y: number;
+			if (stacked) {
+				const rightmost = Math.max(...links.map((l) => l.right)) - box.left;
+				ex = b.right - box.left + 10;
+				ey = b.top - box.top + b.height * 0.5;
+				c1x = Math.max(sx + 40, rightmost + 36);
+				c1y = sy + 18;
+				c2x = Math.max(ex + 44, rightmost + 44);
+				c2y = ey;
+			} else {
+				ex = b.left - box.left + b.width * 0.5;
+				ey = b.top - box.top - 6;
+				const dx = sx - ex;
+				const dy = ey - sy;
+				c1x = sx + 12;
+				c1y = sy + dy * 0.75;
+				c2x = ex + dx * 0.3;
+				c2y = ey - dy * 0.55;
+			}
 			line.setAttribute('d', `M${sx},${sy} C${c1x},${c1y} ${c2x},${c2y} ${ex},${ey}`);
 
 			// arrowhead along the curve's final direction
@@ -116,7 +135,7 @@ const base = import.meta.env.BASE_URL;
 		box-sizing: border-box;
 	}
 
-	/* three rows: the line, the contacts (with open space to their right for the arrow), then the actions */
+	/* two rows: the line, then contacts on the left and buttons + socials on the right */
 	.foot-body {
 		position: relative;
 		display: grid;
@@ -192,12 +211,21 @@ const base = import.meta.env.BASE_URL;
 		}
 	}
 
+	.foot-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1.25rem 2rem;
+		/* room for the arrow to swing down from "vision" */
+		margin-top: 3.25rem;
+	}
+
 	.contact {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.5rem 1.75rem;
-		/* room for the arrow to swing down from "vision" */
-		margin: 2.5rem 0 0;
+		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
@@ -220,8 +248,7 @@ const base = import.meta.env.BASE_URL;
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		justify-content: space-between;
-		gap: 1rem 1.5rem;
+		gap: 0.75rem 1rem;
 	}
 
 	.resume svg {
@@ -237,11 +264,6 @@ const base = import.meta.env.BASE_URL;
 	.socials {
 		display: flex;
 		gap: 0.6rem;
-		margin-left: auto;
-	}
-
-	.solo .socials {
-		margin-left: 0;
 	}
 
 	.socials a {

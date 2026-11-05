@@ -1,6 +1,6 @@
 ---
-import Layout from '../layouts/Layout.astro';
 import Sparkle from './Sparkle.astro';
+import { getLang, localize, t } from '../i18n';
 
 interface Props {
 	title: string;
@@ -14,61 +14,62 @@ interface Props {
 
 const { title, subtitle, image, alt, url, cta, tags = [] } = Astro.props;
 const base = import.meta.env.BASE_URL;
+const lang = getLang(Astro.url);
+const w = t(lang);
 const file = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 ---
 
-<Layout current="projects" title={title}>
-	<main class="project-page">
-		<a class="back-link" href={`${base}projects`}>
-			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
-			<span>All projects</span>
+<!-- one project's page: used on its own route and, on the homepage canvas, below the top row -->
+<article class="project-page" data-project={file}>
+	<a class="btn-gloss back-link" href={`${localize(lang)}#projects`}>
+		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
+		<span>{w('project.back')}</span>
+	</a>
+
+	<header class="hero">
+		<h1>{title}<span class="spark-anchor"><Sparkle size={40} class="title-spark" /></span></h1>
+		<p class="subtitle">{subtitle}</p>
+		{tags.length > 0 && (
+			<ul class="tags" aria-label={w('project.builtWith')}>
+				{tags.map((tag) => <li>{tag}</li>)}
+			</ul>
+		)}
+	</header>
+
+	<div class="top">
+		<a href={url} target="_blank" rel="noreferrer" class="window preview">
+			<span class="window-bar">
+				<span></span>
+				<span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
+			</span>
+			<img src={`${base}${image}`} alt={alt} />
+			<span class="visually-hidden">{w('project.open')} {title} {w('project.newTab')}</span>
 		</a>
 
-		<header class="hero">
-			<h1>{title}<span class="spark-anchor"><Sparkle size={40} class="title-spark" /></span></h1>
-			<p class="subtitle">{subtitle}</p>
-			{tags.length > 0 && (
-				<ul class="tags" aria-label="Built with">
-					{tags.map((tag) => <li>{tag}</li>)}
-				</ul>
-			)}
-		</header>
+		<section class="window about" aria-label={`${w('project.about')} ${title}`}>
+			<div class="window-bar">
+				<span></span>
+				<span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
+			</div>
+			<div class="window-body">
+				<slot />
+				<a href={url} target="_blank" rel="noreferrer" class="btn-gloss">{cta} <span aria-hidden="true">↗</span></a>
+			</div>
+		</section>
+	</div>
 
-		<div class="top">
-			<a href={url} target="_blank" rel="noreferrer" class="window preview">
-				<span class="window-bar">
-					<span>{file}.exe</span>
-					<span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
-				</span>
-				<img src={`${base}${image}`} alt={alt} />
-				<span class="visually-hidden">Open {title} (new tab)</span>
-			</a>
-
-			<section class="window about" aria-label={`About ${title}`}>
-				<div class="window-bar">
-					<span>about.txt</span>
-					<span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
-				</div>
-				<div class="window-body">
-					<slot />
-					<a href={url} target="_blank" rel="noreferrer" class="btn-gloss">{cta} <span aria-hidden="true">↗</span></a>
-				</div>
-			</section>
-		</div>
-
-		{Astro.slots.has('details') && (
-			<section class="window details" aria-label="Project details">
-				<div class="window-bar">
-					<span>readme.txt</span>
-					<span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
-				</div>
-				<div class="window-body details-body">
-					<slot name="details" />
-				</div>
-			</section>
-		)}
-	</main>
-</Layout>
+	{Astro.slots.has('details') && (
+		<section class="window details" aria-label={w('project.details')}>
+			<div class="window-bar">
+				<span></span>
+				<span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
+			</div>
+			<div class="window-body details-body">
+				<slot name="details" />
+			</div>
+		</section>
+	)}
+</article>
 
 <style>
 	.project-page {
@@ -77,18 +78,10 @@ const file = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 		padding: 2.5rem 8vw 0;
 	}
 
+	/* same glossy blue pill as the other buttons (btn-gloss in brand.css) */
 	.back-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
 		margin-bottom: 2.5rem;
-		padding: 0.5rem 1rem 0.5rem 0.75rem;
-		border: 2px solid var(--ink);
-		border-radius: 999px;
-		color: var(--ink);
-		font-weight: 600;
-		text-decoration: none;
-		transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s var(--ease-out);
+		padding: 0.7rem 1.5rem 0.7rem 1.2rem;
 	}
 
 	.back-link svg {
@@ -99,12 +92,6 @@ const file = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 		stroke-width: 2.5;
 		stroke-linecap: round;
 		stroke-linejoin: round;
-	}
-
-	.back-link:hover {
-		background: var(--ink);
-		color: var(--white);
-		transform: translateX(-2px);
 	}
 
 	.hero {

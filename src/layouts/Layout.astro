@@ -2,18 +2,26 @@
 import '../styles/brand.css';
 import SiteNav from '../components/SiteNav.astro';
 import SiteFooter from '../components/SiteFooter.astro';
+import BookBay from '../components/BookBay.astro';
+import EdgeScroll from '../components/EdgeScroll.astro';
+import Canvas from '../components/Canvas.astro';
+import { getLang, languages, switchLang, t, type Lang } from '../i18n';
 
 interface Props {
 	current?: 'home' | 'projects' | 'wall';
 	title?: string;
+	// full-screen pages (the message wall): no nav, footer or guest book
+	bare?: boolean;
 }
 
-const { current, title } = Astro.props;
+const { current, title, bare = false } = Astro.props;
 const base = import.meta.env.BASE_URL;
+const lang = getLang(Astro.url);
+const site = Astro.site ?? Astro.url;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width" />
@@ -24,13 +32,37 @@ const base = import.meta.env.BASE_URL;
 		<meta name="generator" content={Astro.generator} />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;600&family=Orbitron:wght@700&family=Unbounded:wght@900&display=swap" />
-		<title>{title ? `${title} | Maya Tomarchio` : 'Maya Tomarchio | Developer'}</title>
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;600&family=Orbitron:wght@700&family=Unbounded:wght@900&family=Pacifico&display=swap" />
+		<title>{title ? `${title} | Maya Tomarchio` : t(lang)('site.title')}</title>
+		{(Object.keys(languages) as Lang[]).map((code) => (
+			<link rel="alternate" hreflang={code} href={new URL(switchLang(Astro.url, code), site).href} />
+		))}
 	</head>
 	<body>
-		<SiteNav current={current} />
-		<slot />
-		<SiteFooter showWallLink={current !== 'wall'} />
+		{bare ? (
+			<slot />
+		) : current === 'home' ? (
+			<div class="viewport">
+				<div class="world">
+					<slot name="left" />
+					<div class="stage">
+						<SiteNav current={current} />
+						<slot />
+						<SiteFooter />
+					</div>
+					<BookBay />
+					<slot name="below" />
+				</div>
+			</div>
+			<Canvas />
+		) : (
+			<>
+				<SiteNav current={current} />
+				<slot />
+				<SiteFooter />
+			</>
+		)}
+		{current !== 'home' && <EdgeScroll />}
 	</body>
 </html>
 
@@ -48,4 +80,39 @@ const base = import.meta.env.BASE_URL;
 		width: 100%;
 		min-height: 100%;
 	}
+
+	/*
+	  The homepage is a canvas: the projects gallery, the page and the guest book along the top, project pages below.
+	  The viewport is the window onto it; src/scripts/camera.ts moves and zooms the world inside.
+	*/
+	:global(:root) {
+		--book-shift: clamp(340px, 60vw, 720px);
+	}
+
+	/* only the camera's view shows; the page itself never scrolls */
+	.viewport {
+		position: fixed;
+		inset: 0;
+		overflow: clip;
+		/* the canvas handles touch drags and pinches itself */
+		touch-action: none;
+	}
+
+	/* BookBay's script moves this (transform) as the camera pans */
+	.world {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		display: flex;
+		align-items: stretch;
+		transform-origin: 0 0;
+		will-change: transform;
+	}
+
+	.stage {
+		flex: 0 0 100%;
+		min-width: 0;
+	}
+
 </style>

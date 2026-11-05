@@ -1,0 +1,252 @@
+---
+import ProjectBody from '../ProjectBody.astro';
+import { getLang } from '../../i18n';
+
+// the same page in English, Spanish and Italian; the address (/, /es/ or /it/) decides which one shows
+const lang = getLang(Astro.url);
+---
+
+{lang === 'it' ? (
+	<ProjectBody
+		title="My Fruit Worth"
+		subtitle="Raccogli tutta la frutta che cresce nel tuo giardino."
+		image="myFruitWorth.png"
+		alt="Schermata iniziale di My Fruit Worth, un gioco in cui si raccoglie la frutta in giardino"
+		url="https://maya2234.github.io/myFruitWorth/"
+		cta="Gioca"
+		tags={['JavaScript', 'HTML Canvas', 'Grafica 3D']}
+	>
+		<p>
+			Un breve prototipo di gioco in cui il giocatore raccoglie la frutta in giardino allenando la rapidità di decisione
+			e il riconoscimento visivo. Realizzato per il corso di Computer Graphics 5160, con ogni vista 3D proiettata e disegnata a mano.
+		</p>
+
+		<Fragment slot="details">
+			<div>
+				<h2>Comandi e gioco</h2>
+				<ul>
+					<li><strong>Movimento:</strong> vai avanti o indietro nella direzione in cui guardi e gira con le frecce <strong>Sinistra</strong> e <strong>Destra</strong>.</li>
+					<li><strong>Interazione:</strong> quando sei abbastanza vicino a un frutto, premi la <strong>barra spaziatrice</strong> per raccoglierlo e metterlo nel cesto.</li>
+					<li><strong>Ricomincia:</strong> premi <strong>R</strong> per ricominciare in qualsiasi momento.</li>
+					<li><strong>Grafica:</strong> scegli tra tre stili visivi con i pulsanti di opzione.</li>
+					<li><strong>Vittoria:</strong> quando hai raccolto tutta la frutta compare una schermata di vittoria; premi <strong>R</strong> per giocare di nuovo.</li>
+				</ul>
+			</div>
+
+			<div>
+				<h2>Panoramica tecnica</h2>
+				<p>
+					Ogni tipo di oggetto del gioco (<code>house</code>, <code>bush</code>, <code>fruit</code>) è definito da un insieme di
+					vertici, spigoli e facce costruite su quei vertici.
+				</p>
+				<p>
+					Le istanze degli oggetti vengono create con posizione e scala proprie, poi proiettate con il <strong>metodo della camera a foro stenopeico</strong>: x e y vengono divise per z per rendere la profondità.
+				</p>
+			</div>
+
+			<div>
+				<h2>Livelli della pipeline grafica</h2>
+				<h3>Livello 1</h3>
+				<ol>
+					<li>Scorre ogni istanza di oggetto, saltando la frutta già raccolta.</li>
+					<li>Applica posizione, scala e proiezione dei vertici a ogni modello.</li>
+					<li><strong>Ordinamento per profondità:</strong> ordina dalla z più grande alla più piccola, così la geometria più lontana dalla camera viene disegnata per prima e quella più vicina sopra.</li>
+					<li><strong>Rendering:</strong> disegna le facce con HTML5 Canvas: <code>beginPath()</code>, percorre i vertici della faccia con <code>moveTo()</code>, poi <code>closePath()</code> e <code>fill()</code>.</li>
+				</ol>
+				<h3>Livello 2</h3>
+				<ol>
+					<li>Inizializza una griglia di 320 × 200.</li>
+					<li>Scorre tutte le istanze degli oggetti, saltando la frutta raccolta.</li>
+					<li>Scala, posiziona e proietta ogni vertice sulla griglia, tenendo solo i punti davanti alla camera.</li>
+					<li>Disegna ogni spigolo a partire da (u₁, v₁), avanzando pixel per pixel lungo x e sommando la pendenza a ogni passo per colorare la linea.</li>
+				</ol>
+				<h3>Livello 3</h3>
+				<ol>
+					<li>Inizializza la griglia e salta la frutta raccolta.</li>
+					<li>Posiziona e scala ogni istanza e ne memorizza i vertici proiettati.</li>
+					<li>Per ogni oggetto, scorre le facce visibili, tagliando la geometria dietro la camera.</li>
+					<li><strong>Rasterizzazione dei triangoli:</strong> trova il riquadro che contiene i tre vertici di ogni faccia, poi verifica ogni pixel con le <strong>coordinate baricentriche</strong> per colorare solo quelli dentro il triangolo.</li>
+				</ol>
+			</div>
+
+			<div>
+				<h2>Problemi noti</h2>
+				<ul>
+					<li><strong>Rilevamento delle collisioni:</strong> le collisioni non funzionano del tutto. Andando dritto contro la facciata di una casa ci si ferma, ma avvicinandosi di sbieco dopo aver girato la si può attraversare.</li>
+				</ul>
+			</div>
+
+			<div>
+				<h2>Miglioramenti futuri</h2>
+				<ul>
+					<li><strong>Ciclo giorno/notte:</strong> un sole che tramonta come timer di gioco, scurendo piano piano il cielo.</li>
+					<li><strong>Meteo:</strong> meteo e nuvole dinamici.</li>
+					<li><strong>Cesto a schermo:</strong> un cesto che si riempie man mano che raccogli la frutta.</li>
+					<li><strong>Social:</strong> una classifica giornaliera.</li>
+				</ul>
+			</div>
+		</Fragment>
+	</ProjectBody>
+) : lang === 'es' ? (
+	<ProjectBody
+		title="My Fruit Worth"
+		subtitle="Recoge toda la fruta que crece en tu jardín."
+		image="myFruitWorth.png"
+		alt="Pantalla de inicio de My Fruit Worth, un juego de recoger fruta en el jardín"
+		url="https://maya2234.github.io/myFruitWorth/"
+		cta="Jugar"
+		tags={['JavaScript', 'HTML Canvas', 'Gráficos 3D']}
+	>
+		<p>
+			Un prototipo de juego corto en el que el jugador recoge fruta del jardín mientras practica la toma de decisiones rápida
+			y el reconocimiento visual. Hecho para la asignatura Computer Graphics 5160, con cada vista 3D proyectada y dibujada a mano.
+		</p>
+
+		<Fragment slot="details">
+			<div>
+				<h2>Controles y juego</h2>
+				<ul>
+					<li><strong>Movimiento:</strong> avanza o retrocede en la dirección en la que miras y gira con las flechas <strong>Izquierda</strong> y <strong>Derecha</strong>.</li>
+					<li><strong>Interacción:</strong> cuando estés lo bastante cerca de una fruta, pulsa la <strong>barra espaciadora</strong> para recogerla y guardarla en tu cesta.</li>
+					<li><strong>Reiniciar:</strong> pulsa <strong>R</strong> para empezar de nuevo en cualquier momento.</li>
+					<li><strong>Gráficos:</strong> cambia entre tres estilos visuales con los botones de opción.</li>
+					<li><strong>Ganar:</strong> al recoger toda la fruta aparece una pantalla de victoria; pulsa <strong>R</strong> para volver a jugar.</li>
+				</ul>
+			</div>
+
+			<div>
+				<h2>Resumen técnico</h2>
+				<p>
+					Cada tipo de objeto del juego (<code>house</code>, <code>bush</code>, <code>fruit</code>) se define como un conjunto de
+					vértices, aristas y caras construidas con esos vértices.
+				</p>
+				<p>
+					Las instancias de los objetos se crean con su propia posición y escala, y se proyectan con el <strong>método de la cámara estenopeica</strong>: dividiendo x e y entre z para representar la profundidad.
+				</p>
+			</div>
+
+			<div>
+				<h2>Niveles del pipeline gráfico</h2>
+				<h3>Nivel 1</h3>
+				<ol>
+					<li>Recorre cada instancia de objeto, saltando la fruta ya recogida.</li>
+					<li>Aplica la posición, la escala y la proyección de vértices a cada modelo.</li>
+					<li><strong>Ordenación por profundidad:</strong> ordena de la z mayor a la menor para que la geometría más lejana de la cámara se dibuje primero y la más cercana quede encima.</li>
+					<li><strong>Renderizado:</strong> dibuja las caras con HTML5 Canvas: <code>beginPath()</code>, recorre los vértices de la cara con <code>moveTo()</code> y luego <code>closePath()</code> y <code>fill()</code>.</li>
+				</ol>
+				<h3>Nivel 2</h3>
+				<ol>
+					<li>Inicializa una cuadrícula de 320 × 200.</li>
+					<li>Recorre todas las instancias de objetos, saltando la fruta recogida.</li>
+					<li>Escala, coloca y proyecta cada vértice sobre la cuadrícula, quedándose solo con los puntos delante de la cámara.</li>
+					<li>Dibuja cada arista desde (u₁, v₁), avanzando píxel a píxel en x y sumando la pendiente en cada paso para colorear la línea.</li>
+				</ol>
+				<h3>Nivel 3</h3>
+				<ol>
+					<li>Inicializa la cuadrícula y salta la fruta recogida.</li>
+					<li>Coloca y escala cada instancia de objeto y guarda sus vértices proyectados.</li>
+					<li>Para cada objeto, recorre sus caras visibles y recorta la geometría que queda detrás de la cámara.</li>
+					<li><strong>Rasterización de triángulos:</strong> busca el rectángulo que contiene los tres vértices de cada cara y comprueba cada píxel con <strong>coordenadas baricéntricas</strong> para rellenar solo los que están dentro del triángulo.</li>
+				</ol>
+			</div>
+
+			<div>
+				<h2>Problemas conocidos</h2>
+				<ul>
+					<li><strong>Detección de colisiones:</strong> las colisiones no funcionan del todo. Si caminas de frente contra la fachada de una casa te detienes, pero si te acercas en diagonal después de girar puedes atravesarla.</li>
+				</ul>
+			</div>
+
+			<div>
+				<h2>Mejoras futuras</h2>
+				<ul>
+					<li><strong>Ciclo de día y noche:</strong> un sol que se pone como temporizador del juego, oscureciendo poco a poco el cielo.</li>
+					<li><strong>Clima:</strong> clima y nubes dinámicos.</li>
+					<li><strong>Cesta en pantalla:</strong> una cesta que se va llenando a medida que recoges fruta.</li>
+					<li><strong>Social:</strong> una clasificación diaria.</li>
+				</ul>
+			</div>
+		</Fragment>
+	</ProjectBody>
+) : (
+	<ProjectBody
+		title="My Fruit Worth"
+		subtitle="Pick all of the fruit growing in your garden."
+		image="myFruitWorth.png"
+		alt="Title screen of My Fruit Worth, a garden fruit-picking game"
+		url="https://maya2234.github.io/myFruitWorth/"
+		cta="Play the game"
+		tags={['JavaScript', 'HTML Canvas', '3D graphics']}
+	>
+		<p>
+			A short game prototype where the player collects fruit from the garden while practicing quick decision-making
+			and visual recognition. Made for Computer Graphics 5160, with every 3D view projected and drawn by hand.
+		</p>
+
+		<Fragment slot="details">
+			<div>
+				<h2>Controls &amp; gameplay</h2>
+				<ul>
+					<li><strong>Movement:</strong> move forward or backward in the direction you are facing, and turn with the <strong>Left</strong> and <strong>Right</strong> arrow keys.</li>
+					<li><strong>Interaction:</strong> when you are close enough to a fruit, press <strong>Spacebar</strong> to pick it and put it in your basket.</li>
+					<li><strong>Restart:</strong> press <strong>R</strong> to restart at any time.</li>
+					<li><strong>Graphics:</strong> switch between three visual styles with the radio buttons.</li>
+					<li><strong>Winning:</strong> a victory screen appears once every fruit is collected; press <strong>R</strong> to play again.</li>
+				</ul>
+			</div>
+
+			<div>
+				<h2>Technical overview</h2>
+				<p>
+					Each object type in the game (<code>house</code>, <code>bush</code>, <code>fruit</code>) is defined as a set of
+					vertices, edges and faces built from those vertices.
+				</p>
+				<p>
+					Object instances are created with their own position and scale, then projected with the <strong>pinhole camera method</strong>: dividing x and y by z to project depth.
+				</p>
+			</div>
+
+			<div>
+				<h2>Graphics pipeline levels</h2>
+				<h3>Level 1</h3>
+				<ol>
+					<li>Loop through each object instance, skipping any collected fruit.</li>
+					<li>Apply positioning, scaling and vertex projection to each model.</li>
+					<li><strong>Depth sorting:</strong> sort from largest to smallest z so geometry furthest from the camera is drawn first and the nearest draws on top.</li>
+					<li><strong>Rendering:</strong> draw faces with HTML5 Canvas: <code>beginPath()</code>, step through the face's vertices with <code>moveTo()</code>, then <code>closePath()</code> and <code>fill()</code>.</li>
+				</ol>
+				<h3>Level 2</h3>
+				<ol>
+					<li>Initialize a 320 × 200 grid.</li>
+					<li>Loop through all object instances, skipping collected fruit.</li>
+					<li>Scale, position and project every vertex onto the grid, keeping only points in front of the camera.</li>
+					<li>Draw each edge from (u₁, v₁), stepping pixel by pixel along x and adding the slope on each step to colour the line.</li>
+				</ol>
+				<h3>Level 3</h3>
+				<ol>
+					<li>Initialize the grid and skip collected fruit.</li>
+					<li>Position and scale each object instance and store its projected vertices.</li>
+					<li>For each object, loop through its visible faces, clipping geometry behind the camera.</li>
+					<li><strong>Triangle rasterization:</strong> find the bounding box of each face's three vertices, then test every pixel with <strong>barycentric coordinates</strong> to fill only the pixels inside the triangle.</li>
+				</ol>
+			</div>
+
+			<div>
+				<h2>Known issues</h2>
+				<ul>
+					<li><strong>Collision detection:</strong> collisions are not fully working. Walking into a house face head-on is blocked, but approaching at an angle after turning lets the player pass through.</li>
+				</ul>
+			</div>
+
+			<div>
+				<h2>Future improvements</h2>
+				<ul>
+					<li><strong>Day/night cycle:</strong> a setting sun as the game timer, gradually darkening the sky.</li>
+					<li><strong>Weather:</strong> dynamic weather and clouds.</li>
+					<li><strong>Basket UI:</strong> a basket on screen that fills up as fruit is collected.</li>
+					<li><strong>Social:</strong> a daily leaderboard.</li>
+				</ul>
+			</div>
+		</Fragment>
+	</ProjectBody>
+)}

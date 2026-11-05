@@ -1,0 +1,63 @@
+<!--
+	Hold the cursor at the bottom edge of the window to scroll down, or at the top edge to scroll up.
+	It only starts if the cursor arrived moving that way, waits a moment (so heading for the browser's
+	tabs doesn't scroll), eases in, and stops as soon as the cursor moves away. Used on every page.
+-->
+<script>
+	const EDGE = 28; // px at the top / bottom of the window
+	const DELAY = 150; // ms before it starts
+	const SPEED = 1.1; // px per ms at full speed
+	const RAMP = 400; // ms to reach full speed
+
+	let dir = 0; // +1 scrolling down, -1 up
+	let since = 0;
+	let raf = 0;
+	let last = 0;
+	let lastY = -1;
+
+	const tick = (now: number) => {
+		if (!dir) {
+			raf = 0;
+			last = 0;
+			return;
+		}
+		const dt = last ? Math.min(now - last, 50) : 16;
+		last = now;
+		const held = now - since - DELAY;
+		if (held > 0) {
+			// only show the arrow once it's actually moving, and only while there's further to go
+			const before = scrollY;
+			scrollBy(0, dir * SPEED * Math.min(1, held / RAMP) * dt);
+			const moving = scrollY !== before;
+			document.documentElement.classList.toggle('pan-down', moving && dir > 0);
+			document.documentElement.classList.toggle('pan-up', moving && dir < 0);
+		}
+		raf = requestAnimationFrame(tick);
+	};
+
+	const start = (d: number) => {
+		if (dir === d) return;
+		dir = d;
+		if (!d) document.documentElement.classList.remove('pan-down', 'pan-up');
+		since = performance.now();
+		if (d && !raf) raf = requestAnimationFrame(tick);
+	};
+
+	addEventListener('mousemove', (e) => {
+		const y = e.clientY;
+		const dy = lastY < 0 ? 0 : y - lastY;
+		lastY = y;
+		if (y >= innerHeight - EDGE) {
+			if (dir !== 1 && dy > 0) start(1);
+		} else if (y <= EDGE) {
+			if (dir !== -1 && dy < 0) start(-1);
+		} else if (dir) {
+			start(0);
+		}
+	});
+
+	document.addEventListener('mouseleave', () => start(0));
+	addEventListener('blur', () => start(0));
+	// typing on the message wall shouldn't scroll away underneath you
+	addEventListener('keydown', () => start(0));
+</script>

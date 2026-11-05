@@ -1,0 +1,159 @@
+---
+import ProjectBody from '../ProjectBody.astro';
+import { getLang } from '../../i18n';
+
+// the same page in English, Spanish and Italian; the address (/, /es/ or /it/) decides which one shows
+const lang = getLang(Astro.url);
+---
+
+{lang === 'it' ? (
+	<ProjectBody
+		title="Anuva Cleaning"
+		subtitle="Sito web per un’impresa di pulizie commerciali e servizi per strutture di Cincinnati."
+		image="anuvaCleaning.png"
+		alt="Home page di Anuva, un’impresa di pulizie commerciali di Cincinnati, su una foto dello skyline della città"
+		url="https://anuvacleaning.com"
+		cta="Visita il sito"
+		tags={['Lavoro freelance', 'Online']}
+	>
+		<p>
+			Il sito di Anuva, un’impresa di pulizie commerciali e servizi per strutture guidata da donne e da minoranze, attiva
+			nell’area di Cincinnati dal 2014. Si rivolge a enti pubblici, cantieri, sanità, scuole e grandi strutture per eventi,
+			e trasforma le visite in richieste di preventivo.
+		</p>
+
+		<Fragment slot="details">
+			<div>
+				<h2>Cosa fa il sito</h2>
+				<ul>
+					<li><strong>Apre con l’offerta:</strong> una testata con lo skyline, il titolo, una frase di presentazione e due azioni, Richiedi un preventivo e Scopri i servizi.</li>
+					<li><strong>Crea fiducia subito:</strong> una fascia di credenziali (guidata da donne e da minoranze, esperienza con appalti pubblici, conforme ai salari di riferimento, completamente assicurata, fondata nel 2014) e un riquadro di certificazioni.</li>
+					<li><strong>Divide i visitatori per settore:</strong> enti pubblici, cantieri, uffici e commercio, sanità, scuole, grandi strutture ed eventi, ognuno con una breve presentazione.</li>
+					<li><strong>Elenca i servizi:</strong> pulizie commerciali, pulizie di fine cantiere, servizio di custodia diurno, cura dei pavimenti, pulizie per eventi e strutture, e sanificazione.</li>
+				</ul>
+			</div>
+
+			<div>
+				<h2>Pensato per gli appalti pubblici</h2>
+				<p>
+					Una sezione dedicata agli appalti pubblici spiega che le tabelle salariali e le buste paga certificate vengono
+					verificate prima di ogni progetto, un aspetto importante per i committenti pubblici a cui l’azienda si rivolge.
+				</p>
+			</div>
+
+			<div>
+				<h2>Lavori realizzati</h2>
+				<p>
+					Una sezione con i progetti recenti mostra incarichi reali per settore: sei mesi di pulizie ospedaliere allo UC Hospital,
+					due anni di servizio continuativo per StandardAero, pulizie durante e dopo il torneo di tennis Cincinnati Open e
+					il servizio di custodia diurno in sette scuole di Sharonville.
+				</p>
+			</div>
+
+			<div>
+				<h2>Pagine</h2>
+				<p>Home, Servizi, Settori, Appalti pubblici, Chi siamo e un modulo per richiedere un preventivo.</p>
+			</div>
+		</Fragment>
+	</ProjectBody>
+) : lang === 'es' ? (
+	<ProjectBody
+		title="Anuva Cleaning"
+		subtitle="Sitio web para una empresa de limpieza comercial y servicios de instalaciones de Cincinnati."
+		image="anuvaCleaning.png"
+		alt="Página de inicio de Anuva, una empresa de limpieza comercial de Cincinnati, sobre una foto del skyline de la ciudad"
+		url="https://anuvacleaning.com"
+		cta="Visitar el sitio"
+		tags={['Freelance', 'En línea']}
+	>
+		<p>
+			El sitio web de Anuva, una empresa de limpieza comercial y servicios de instalaciones dirigida por mujeres y minorías que
+			trabaja en el área de Cincinnati desde 2014. Se dirige a clientes del sector público, la construcción, la salud, la educación
+			y los grandes recintos, y convierte las visitas en solicitudes de presupuesto.
+		</p>
+
+		<Fragment slot="details">
+			<div>
+				<h2>Qué hace el sitio</h2>
+				<ul>
+					<li><strong>Empieza por la oferta:</strong> una cabecera con el skyline, el titular, una frase de presentación y dos acciones, Solicitar presupuesto y Ver servicios.</li>
+					<li><strong>Genera confianza enseguida:</strong> una franja de credenciales (dirigida por mujeres y minorías, experiencia en contratos públicos, cumple con los salarios de referencia, totalmente asegurada, fundada en 2014) y un panel de certificaciones.</li>
+					<li><strong>Clasifica a los visitantes por sector:</strong> sector público, construcción, comercial, salud, educación, y grandes recintos y eventos, cada uno con su propia presentación breve.</li>
+					<li><strong>Enumera los servicios:</strong> limpieza comercial, limpieza de obra, servicio de conserjería diurno, cuidado de suelos, limpieza de eventos y recintos, y desinfección.</li>
+				</ul>
+			</div>
+
+			<div>
+				<h2>Pensado para contratos públicos</h2>
+				<p>
+					Una sección dedicada a la contratación pública explica que las tablas salariales y las nóminas certificadas se revisan
+					antes de cada proyecto, algo importante para los compradores del sector público a los que la empresa se presenta.
+				</p>
+			</div>
+
+			<div>
+				<h2>Trabajos realizados</h2>
+				<p>
+					Una sección de proyectos recientes muestra encargos reales por sector: seis meses de limpieza hospitalaria en UC Hospital,
+					dos años de servicio continuo para StandardAero, limpieza durante y después del torneo de tenis Cincinnati Open y
+					el servicio de conserjería diurno en siete escuelas de Sharonville.
+				</p>
+			</div>
+
+			<div>
+				<h2>Páginas</h2>
+				<p>Inicio, Servicios, Sectores, Contratación pública, Quiénes somos y un formulario para solicitar presupuesto.</p>
+			</div>
+		</Fragment>
+	</ProjectBody>
+) : (
+	<ProjectBody
+		title="Anuva Cleaning"
+		subtitle="Website for a Cincinnati commercial cleaning and facility services company."
+		image="anuvaCleaning.png"
+		alt="Home page of Anuva, a Cincinnati commercial cleaning company, over a photo of the Cincinnati skyline"
+		url="https://anuvacleaning.com"
+		cta="Visit the live site"
+		tags={['Gig Work', 'Live']}
+	>
+		<p>
+			The website for Anuva, a woman- and minority-owned commercial cleaning and facility services company that has
+			served greater Cincinnati since 2014. It speaks to government, construction, healthcare, education and large-venue
+			clients, and turns visits into quote requests.
+		</p>
+
+		<Fragment slot="details">
+			<div>
+				<h2>What the site does</h2>
+				<ul>
+					<li><strong>Leads with the offer:</strong> a skyline hero with the headline, a one-line pitch and two actions, Request a quote and View our services.</li>
+					<li><strong>Builds trust fast:</strong> a strip of credentials (woman and minority-owned, government contract experience, prevailing-wage capable, fully insured, established 2014) and a panel of certifications.</li>
+					<li><strong>Sorts visitors by industry:</strong> government, construction, commercial, healthcare, education, and large venues and events, each with its own short pitch.</li>
+					<li><strong>Lists the services:</strong> commercial janitorial, construction cleaning, day porter services, floor care, event and venue cleaning, and disinfecting.</li>
+				</ul>
+			</div>
+
+			<div>
+				<h2>Built for public contracts</h2>
+				<p>
+					A dedicated government contracting section explains that wage determinations and certified payroll are reviewed
+					before every project, which matters to the public-sector buyers the company bids for.
+				</p>
+			</div>
+
+			<div>
+				<h2>Proof of work</h2>
+				<p>
+					A recent-projects section shows real engagements by sector: six months of hospital cleaning at UC Hospital, two
+					years of ongoing service for StandardAero, event and ongoing cleaning for the Cincinnati Open tennis
+					tournament, and day porter services across seven Sharonville schools.
+				</p>
+			</div>
+
+			<div>
+				<h2>Pages</h2>
+				<p>Home, Services, Industries, Government contracting, About, and a Request a quote form.</p>
+			</div>
+		</Fragment>
+	</ProjectBody>
+)}

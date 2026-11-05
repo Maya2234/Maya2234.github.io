@@ -1,0 +1,54 @@
+---
+import ProjectBody from '../ProjectBody.astro';
+import { getLang } from '../../i18n';
+
+// the same page in English, Spanish and Italian; the address (/, /es/ or /it/) decides which one shows
+const lang = getLang(Astro.url);
+---
+
+{lang === 'it' ? (
+	<ProjectBody
+		title="myPoleMagazine"
+		subtitle="Registra le figure, segui i progressi, trova ispirazione."
+		image="myPoleMagazine.png"
+		alt="Schermata di accesso di myPoleMagazine"
+		url="https://maya2234.github.io/myPoleMagazine/"
+		cta="Apri l’app"
+		tags={['JavaScript', 'Web app']}
+	>
+		<p>
+			Una web app per chi fa pole dance: registra le figure che stai imparando, segui i tuoi progressi nel tempo
+			e trova ispirazione. Ricorda se ogni utente preferisce la modalità chiara o scura.
+		</p>
+	</ProjectBody>
+) : lang === 'es' ? (
+	<ProjectBody
+		title="myPoleMagazine"
+		subtitle="Registra figuras, sigue tu progreso, encuentra inspiración."
+		image="myPoleMagazine.png"
+		alt="Pantalla de acceso de myPoleMagazine"
+		url="https://maya2234.github.io/myPoleMagazine/"
+		cta="Abrir la app"
+		tags={['JavaScript', 'Web app']}
+	>
+		<p>
+			Una web app para quienes practican pole dance: registra las figuras que estás aprendiendo, sigue tu progreso con el tiempo
+			y encuentra inspiración. Recuerda si cada persona prefiere el modo claro o el oscuro.
+		</p>
+	</ProjectBody>
+) : (
+	<ProjectBody
+		title="myPoleMagazine"
+		subtitle="Log moves, track progress, browse inspo."
+		image="myPoleMagazine.png"
+		alt="Log-in screen of myPoleMagazine"
+		url="https://maya2234.github.io/myPoleMagazine/"
+		cta="Open the app"
+		tags={['JavaScript', 'Web app']}
+	>
+		<p>
+			A web app for pole dancers to log the moves they are learning, track their progress over time
+			and browse inspiration. It remembers each dancer's choice of light or dark mode.
+		</p>
+	</ProjectBody>
+)}

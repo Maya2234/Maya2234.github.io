@@ -3,8 +3,9 @@
 
 	position: relative;
 	width: 100%;
-	/* the ring is far wider than the screen; keep it from widening the page */
-	overflow: hidden;
+	/* the ring is far wider than the screen; keep it from widening the page, but let the popup hang below */
+	overflow-x: clip;
+	overflow-y: visible;
 }
 
 .tdc-stage {
@@ -65,16 +66,18 @@
 }
 
 .tdc-title {
+	display: none;
 	position: absolute;
 	inset: auto 0 0 0;
-	padding: 0.6rem 0.8rem;
-	background: var(--tdc-ink);
-	color: #ffffff;
-	font-size: 1rem;
-	font-weight: 600;
-	letter-spacing: -0.01em;
-	transform: translateY(100%);
-	transition: transform 0.25s ease;
+	padding: 0.55rem 0.8rem;
+	border-top: 3px solid var(--tdc-ink);
+	background: var(--pink-soft, #ffd3e6);
+	color: var(--tdc-ink);
+	font-family: var(--font-display);
+	font-size: 0.8rem;
+	font-weight: 900;
+	letter-spacing: 0;
+	text-transform: uppercase;
 }
 
 .tdc-card:hover img,
@@ -82,20 +85,107 @@
 	opacity: 0.85;
 }
 
-.tdc-card:hover .tdc-title,
-.tdc-card:focus-visible .tdc-title {
-	transform: none;
-}
-
 .tdc-card:focus-visible {
 	outline: 3px solid #ffffff;
 	outline-offset: 3px;
 }
 
-/* No hover on touch screens, so the title stays visible there */
+/* touch screens have no hover popup, so each card shows its own title instead */
 @media (hover: none) {
 	.tdc-title {
+		display: block;
+	}
+}
+
+/* wide hover note: rises over the bottom of the cards while one is hovered or focused.
+   Site style: thin black line, rounded, a light-pink wash with a soft blur behind it */
+.tdc-pop {
+	position: absolute;
+	top: calc(100% - 4rem);
+	left: 0;
+	right: 0;
+	z-index: 3;
+	border: 2px solid var(--tdc-ink);
+	border-radius: 18px;
+	background: rgba(255, 211, 230, 0.78);
+	-webkit-backdrop-filter: blur(12px);
+	backdrop-filter: blur(12px);
+	opacity: 0;
+	filter: blur(4px);
+	transform: translateY(10px);
+	transition:
+		opacity 0.3s ease,
+		filter 0.3s ease,
+		transform 0.3s var(--ease-out, ease);
+	pointer-events: none;
+}
+
+.tdc-pop.is-open {
+	opacity: 1;
+	filter: none;
+	transform: none;
+}
+
+.tdc-pop-body {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 0.5rem 2rem;
+	padding: 1.1rem clamp(1.25rem, 3vw, 2.5rem);
+}
+
+.tdc-pop-title {
+	margin: 0;
+	font-family: var(--font-display);
+	font-size: clamp(1.1rem, 2vw, 1.6rem);
+	font-weight: 900;
+	letter-spacing: -0.02em;
+	text-transform: uppercase;
+	color: var(--pink-deep, #c42764);
+}
+
+.tdc-pop-blurb {
+	margin: 0;
+	font-size: 1rem;
+	line-height: 1.45;
+}
+
+.tdc-pop-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.tdc-pop-tags li {
+	padding: 0.2rem 0.7rem;
+	border: 1.5px solid var(--tdc-ink);
+	border-radius: 999px;
+	font-size: 0.8rem;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+	.tdc-pop-body {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* touch screens have no hover; the card titles already show there */
+@media (hover: none) {
+	.tdc-pop {
+		display: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tdc-pop {
+		filter: none;
 		transform: none;
+		transition: opacity 0.15s ease;
 	}
 }
 
@@ -108,12 +198,24 @@
 	width: 3.5rem;
 	height: 3.5rem;
 	padding: 0;
-	border: 3px solid var(--tdc-ink);
+	border: 2px solid var(--tdc-ink);
 	border-radius: 50%;
-	background: #e63e7d;
+	/* the same glossy blue gel as .btn-gloss */
+	background: linear-gradient(180deg, #ffffff 0%, #eaf9ff 46%, #b9ecff 52%, #e3f8ff 100%);
 	color: var(--tdc-ink);
+	overflow: hidden;
 	transform: translateY(-50%);
-	transition: background-color 0.2s ease, color 0.2s ease;
+	transition: background 0.2s ease, transform 0.2s var(--ease-out, ease);
+}
+
+/* bright upper sheen */
+.tdc-arrow::after {
+	content: '';
+	position: absolute;
+	inset: 3px 18% 52% 18%;
+	border-radius: 999px;
+	background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+	pointer-events: none;
 }
 
 .tdc-arrow-prev {
@@ -135,8 +237,8 @@
 }
 
 .tdc-arrow:hover {
-	background: var(--tdc-ink);
-	color: #ffffff;
+	background: linear-gradient(180deg, #ffffff 0%, #ccf8ff 46%, #6fe7ff 52%, #c2f6ff 100%);
+	transform: translateY(calc(-50% - 2px));
 }
 
 .tdc-arrow:active {
@@ -153,7 +255,88 @@
 		height: 280px;
 	}
 
-	.tdc-arrow {
+	/* wide popup under the ring: fades in while a card is hovered or focused */
+.tdc-pop {
+	position: absolute;
+	top: calc(100% + 0.75rem);
+	left: 0;
+	right: 0;
+	z-index: 3;
+	opacity: 0;
+	transform: translateY(8px);
+	transition: opacity 0.25s ease, transform 0.25s var(--ease-out, ease);
+	pointer-events: none;
+}
+
+.tdc-pop.is-open {
+	opacity: 1;
+	transform: none;
+}
+
+.tdc-pop-body {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 0.5rem 2rem;
+	padding: 1.1rem clamp(1.25rem, 3vw, 2.5rem);
+	background: var(--white, #fff);
+}
+
+.tdc-pop-title {
+	margin: 0;
+	font-family: var(--font-display);
+	font-size: clamp(1.1rem, 2vw, 1.6rem);
+	font-weight: 900;
+	letter-spacing: -0.02em;
+	text-transform: uppercase;
+	color: var(--pink-deep, #c42764);
+}
+
+.tdc-pop-blurb {
+	margin: 0;
+	font-size: 1rem;
+	line-height: 1.45;
+}
+
+.tdc-pop-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.tdc-pop-tags li {
+	padding: 0.2rem 0.65rem;
+	border: 2px solid var(--tdc-ink);
+	border-radius: 999px;
+	font-size: 0.8rem;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+	.tdc-pop-body {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* touch screens have no hover; the card titles already show there */
+@media (hover: none) {
+	.tdc-pop {
+		display: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tdc-pop {
+		transform: none;
+		transition: opacity 0.15s ease;
+	}
+}
+
+.tdc-arrow {
 		width: 3rem;
 		height: 3rem;
 	}

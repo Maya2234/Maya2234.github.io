@@ -1,0 +1,295 @@
+---
+import PixelBook from './PixelBook.astro';
+import { getLang, localize, t } from '../i18n';
+
+const lang = getLang(Astro.url);
+const w = t(lang);
+---
+
+<!--
+	The guest book, lying on the floor of the homepage canvas just right of home, level with the "All projects" button.
+	Get there by panning (hold the cursor at the right edge, scroll sideways, drag), the headshot, or the little tab on touch screens.
+	Hovering lifts the cover; clicking opens it and then loads the message wall.
+-->
+<aside class="book-bay" aria-label={w('book.aria')}>
+	<div class="book-spot">
+		<!-- a little handwritten title right above the book -->
+		<p class="book-title" aria-hidden="true">{w('book.title')}</p>
+		<a class="book-link" href={localize(lang, 'message-wall')} aria-label={w('book.open')}>
+			<PixelBook />
+		</a>
+	</div>
+</aside>
+<!-- the message wall, opened over the canvas with a little margin showing around it -->
+<div class="wall-overlay" hidden>
+	<div class="wall-frame" role="dialog" aria-modal="true" aria-label={w('wall.title')}>
+		<iframe title={w('wall.title')} data-src={localize(lang, 'message-wall')}></iframe>
+	</div>
+</div>
+<button type="button" class="book-tab" aria-label={w('book.show')}>
+	<svg viewBox="0 0 8 10" shape-rendering="crispEdges" aria-hidden="true">
+		<rect x="0" y="0" width="7" height="9" fill="#111" />
+		<rect x="1" y="1" width="5" height="7" fill="#e63e7d" />
+		<rect x="1" y="1" width="1" height="7" fill="#c42764" />
+		<rect x="3" y="3" width="2" height="2" fill="#00f0ff" />
+		<rect x="7" y="1" width="1" height="9" fill="#111" />
+		<rect x="1" y="9" width="6" height="1" fill="#111" />
+	</svg>
+</button>
+
+<script>
+	// The guest book on the homepage canvas: where it lies, how it opens, and the "book" view.
+	// Moving around the canvas is src/scripts/camera.ts.
+	import { getCamera, goToView, moveTo, registerView, worldRect } from '../scripts/camera';
+
+	const root = document.documentElement;
+	const stage = document.querySelector<HTMLElement>('.stage')!;
+	const bay = document.querySelector<HTMLElement>('.book-bay')!;
+	const spot = bay.querySelector<HTMLElement>('.book-spot')!;
+	const link = bay.querySelector<HTMLAnchorElement>('.book-link')!;
+	const book = bay.querySelector<HTMLElement>('.pixel-book')!;
+	const tab = document.querySelector<HTMLButtonElement>('.book-tab')!;
+	const overlay = document.querySelector<HTMLElement>('.wall-overlay')!;
+	const frameEl = overlay.querySelector<HTMLIFrameElement>('iframe')!;
+	// the touch tab and the wall overlay stay put on screen, so they live outside the canvas
+	document.body.append(tab, overlay);
+
+	const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+	let opening = false;
+	const frame = (n: number) => (book.dataset.frame = String(n));
+
+	// ---------- where the book lies: level with the "All projects" button ----------
+
+	function placeBook() {
+		const anchor = stage.querySelector<HTMLElement>('[data-book-anchor]');
+		const y = anchor ? worldRect(anchor).y + anchor.offsetHeight / 2 : Math.min(innerHeight * 0.5, stage.offsetHeight / 2);
+		spot.style.top = `${Math.max(0, y - spot.offsetHeight / 2)}px`;
+	}
+
+	placeBook();
+	document.fonts?.ready.then(placeBook);
+	new ResizeObserver(placeBook).observe(stage);
+
+	// the "book" view: the book on screen with the edge of home still showing on the left
+	registerView('book', (instant) => {
+		const b = worldRect(bay);
+		const r = worldRect(spot);
+		moveTo({ s: 1, x: b.x + b.w - root.clientWidth, y: r.y + r.h / 2 - root.clientHeight / 2 }, instant);
+	});
+
+	// is the book (mostly) on screen right now?
+	const bookInView = () => {
+		const c = getCamera();
+		const r = worldRect(spot);
+		const cx = (r.x + r.w / 2 - c.x) * c.s;
+		const cy = (r.y + r.h / 2 - c.y) * c.s;
+		return cx > 0 && cx < root.clientWidth && cy > 0 && cy < root.clientHeight;
+	};
+
+	tab.addEventListener('click', () => goToView(bookInView() ? 'home' : 'book'));
+
+	link.addEventListener('focus', () => {
+		if (!bookInView()) goToView('book');
+		if (!opening) frame(1);
+	});
+	link.addEventListener('blur', () => !opening && frame(0));
+	// hovering lifts the cover a crack, so it reads as something you can open
+	link.addEventListener('pointerenter', () => !opening && frame(1));
+	link.addEventListener('pointerleave', () => !opening && frame(0));
+
+	// ---------- the wall overlay ----------
+
+	function openWall() {
+		if (!frameEl.src) frameEl.src = frameEl.dataset.src!;
+		overlay.hidden = false;
+		root.classList.add('wall-open');
+		requestAnimationFrame(() => overlay.classList.add('is-open'));
+		frameEl.focus();
+	}
+
+	function closeWall() {
+		if (overlay.hidden) return;
+		overlay.classList.remove('is-open');
+		root.classList.remove('wall-open');
+		setTimeout(() => (overlay.hidden = true), reduced ? 0 : 260);
+		// the book swings shut again
+		[4, 3, 2, 0].forEach((n, i) => setTimeout(() => frame(n), 120 + 90 * i));
+		setTimeout(() => (opening = false), 120 + 90 * 4);
+		link.focus({ preventScroll: true });
+	}
+
+	// open the book, then the wall over the canvas
+	link.addEventListener('click', (e) => {
+		if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+		e.preventDefault();
+		if (opening) return;
+		opening = true;
+		if (reduced) {
+			frame(5);
+			openWall();
+			return;
+		}
+		// swing the cover open frame by frame, hold on the open book, then show the wall
+		[2, 3, 4, 5].forEach((n, i) => setTimeout(() => frame(n), 90 * (i + 1)));
+		setTimeout(openWall, 90 * 4 + 300);
+	});
+
+	// close: the wall's back button (it asks from inside the frame), Escape, or a click on the margin
+	addEventListener('message', (e) => {
+		if (e.origin === location.origin && e.data?.type === 'wall:close') closeWall();
+	});
+	addEventListener('keydown', (e) => {
+		if (e.key === 'Escape') closeWall();
+	});
+	overlay.addEventListener('click', (e) => {
+		if (e.target === overlay) closeWall();
+	});
+
+	// back from the message wall: the book is shown lying open, then swings shut
+	if (location.hash === '#book') frame(5);
+	addEventListener('canvas:arrived', (e) => {
+		if ((e as CustomEvent).detail !== 'book') return;
+		placeBook();
+		goToView('book', true);
+		[4, 3, 2, 0].forEach((n, i) => setTimeout(() => !opening && frame(n), 350 + 90 * i));
+	});
+
+	// coming back with the browser's back button can restore a mid-opening page
+	addEventListener('pageshow', (e) => {
+		if (!e.persisted) return;
+		opening = false;
+		frame(0);
+	});
+
+	root.classList.add('has-canvas');
+</script>
+
+<style>
+	/* the floor to the right of the page */
+	.book-bay {
+		flex: 0 0 var(--book-shift);
+		position: relative;
+	}
+
+	/* the book's spot; the script sets its top so it lies level with "All projects" */
+	.book-spot {
+		position: absolute;
+		top: 40vh;
+		left: 0;
+		right: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.book-title {
+		margin: 0 0 -0.4rem;
+		font-family: 'Pacifico', cursive;
+		font-size: 1.5rem;
+		line-height: 1.2;
+		color: var(--white);
+		text-shadow: 2px 2px 0 var(--ink);
+		transform: rotate(-4deg);
+		pointer-events: none;
+	}
+
+	.book-link {
+		display: block;
+		color: var(--ink);
+		text-decoration: none;
+	}
+
+	.book-link:focus-visible {
+		outline: 3px dashed var(--ink);
+		outline-offset: 10px;
+	}
+
+	@media (max-width: 420px) {
+		.book-link :global(.pixel-book) {
+			--px: 4px;
+		}
+	}
+
+	/* the wall overlay: the page dims, the wall sits in a framed sheet with a margin all round */
+	.wall-overlay {
+		position: fixed;
+		inset: 0;
+		z-index: 60;
+		display: grid;
+		padding: clamp(12px, 2.5vw, 32px);
+		background: rgba(17, 17, 17, 0.35);
+		opacity: 0;
+		transition: opacity 0.25s ease;
+	}
+
+	.wall-overlay[hidden] {
+		display: none;
+	}
+
+	.wall-overlay.is-open {
+		opacity: 1;
+	}
+
+	.wall-frame {
+		min-height: 0;
+		border: 3px solid var(--ink);
+		border-radius: 18px;
+		overflow: hidden;
+		background: #fffdf8;
+		box-shadow: 0 24px 60px rgba(120, 0, 50, 0.3);
+		transform: scale(0.97) translateY(10px);
+		transition: transform 0.3s var(--ease-out);
+	}
+
+	.is-open .wall-frame {
+		transform: none;
+	}
+
+	.wall-frame iframe {
+		display: block;
+		width: 100%;
+		height: 100%;
+		border: 0;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.wall-overlay,
+		.wall-frame {
+			transition: none;
+		}
+	}
+
+	/* touch screens: a little pixel book pokes out of the right edge */
+	.book-tab {
+		display: none;
+		position: fixed;
+		top: 50%;
+		right: 0;
+		z-index: 21;
+		width: 34px;
+		height: 44px;
+		padding: 6px 6px 6px 8px;
+		border: 2px solid var(--ink);
+		border-right: 0;
+		border-radius: 10px 0 0 10px;
+		background: var(--pink-soft);
+		transform: translateY(-50%);
+	}
+
+	.book-tab svg {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+
+	@media (hover: none) {
+		.book-tab {
+			display: block;
+		}
+
+		/* once panned over, the tab sits at the left edge of the floor to pan back */
+		:global(html.book-open) .book-tab {
+			right: calc(var(--book-shift) - 2px);
+		}
+	}
+</style>

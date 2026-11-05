@@ -1,0 +1,6 @@
+---
+// The gallery lives on the homepage canvas now, just left of home (see ProjectsGallery). Old links land there.
+import { getLang, localize } from '../../i18n';
+
+return Astro.redirect(`${localize(getLang(Astro.url))}#projects`);
+---

@@ -1,0 +1,49 @@
+---
+// Every project's page, laid out loosely on the canvas below the projects gallery, home and the guest book.
+// Canvas.astro measures them and scatters them into place (and re-scatters when the window or a page changes size).
+// Add a project: create its content component in ./projects/ and list it here with the same href as in data/projects.ts.
+import { getProjects } from '../data/projects';
+import { getLang, t } from '../i18n';
+import MyFruitWorth from './projects/MyFruitWorth.astro';
+import MyPoleMagazine from './projects/MyPoleMagazine.astro';
+import CubeWorldAero from './projects/CubeWorldAero.astro';
+import AnuvaCleaning from './projects/AnuvaCleaning.astro';
+
+const lang = getLang(Astro.url);
+const projects = getProjects(lang);
+
+const pages = [
+	{ title: 'My Fruit Worth', Body: MyFruitWorth },
+	{ title: 'myPoleMagazine', Body: MyPoleMagazine },
+	{ title: 'Cube World Aero', Body: CubeWorldAero },
+	{ title: 'Anuva Cleaning', Body: AnuvaCleaning },
+].map((p) => {
+	const href = projects.find((x) => x.title === p.title)?.href ?? '';
+	return { ...p, href, id: `p-${href.split('/').filter(Boolean).pop()}` };
+});
+---
+
+<div class="project-field" aria-label={t(lang)('canvas.field')}>
+	{pages.map(({ title, Body, href, id }) => (
+		<section class="canvas-project" data-canvas-group={id} data-label={title} data-path={href} aria-label={title}>
+			<Body />
+		</section>
+	))}
+</div>
+
+<style>
+	.project-field {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 0;
+		height: 0;
+	}
+
+	/* each page is a full-width panel; Canvas.astro sets left / top */
+	.canvas-project {
+		position: absolute;
+		width: min(100vw, 1240px);
+		padding-bottom: 4rem;
+	}
+</style>

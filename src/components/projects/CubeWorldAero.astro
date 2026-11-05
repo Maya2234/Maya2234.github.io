@@ -1,0 +1,135 @@
+---
+import ProjectBody from '../ProjectBody.astro';
+import { getLang } from '../../i18n';
+
+// the same page in English, Spanish and Italian; the address (/, /es/ or /it/) decides which one shows
+const lang = getLang(Astro.url);
+---
+
+{lang === 'it' ? (
+	<ProjectBody
+		title="Cube World Aero"
+		subtitle="Un paesaggio di cubi costruito da zero in WebGL."
+		image="aeroCubeWorld.png"
+		alt="Cube World Aero: un paesaggio di cubi verdi con una città, mulini a vento e nuvole sospese sotto un cielo azzurro"
+		url="https://maya2234.github.io/AeroCubeWorld/"
+		cta="Apri la scena"
+		tags={['WebGL', 'JavaScript', 'Shader']}
+	>
+		<p>
+			Una piccola scena WebGL scritta senza librerie 3D: geometria, matrici e ombreggiatura passano direttamente
+			dall’API WebGL pura, avvolte in un’interfaccia lucida in stile Frutiger Aero. Tocca per soffiare bolle e trascina
+			per guardarti intorno.
+		</p>
+
+		<Fragment slot="details">
+			<div>
+				<h2>Come è costruita</h2>
+				<p>
+					Un solo cubo viene copiato su una griglia, spostato nella sua cella e allungato in altezza, con un colore su ogni
+					vertice. Le matrici di prospettiva e look-at posizionano la camera, e il fragment shader sfuma i colori dei vertici
+					e illumina ogni faccia.
+				</p>
+			</div>
+			<div>
+				<h2>Livelli</h2>
+				<ol>
+					<li>Altezze e colore per vertice.</li>
+					<li>Altezze e colori presi da una mappa delle altezze e da una mappa dei colori.</li>
+					<li>Nuvole, farfalle e bolle che si muovono lungo curve di Bézier cubiche, ognuna con la propria matrice del modello.</li>
+				</ol>
+			</div>
+			<div>
+				<h2>Prestazioni</h2>
+				<p>
+					L’intero paesaggio è un unico buffer disegnato con una sola chiamata, così resta fluido fino a decine di migliaia
+					di cubi. Un indicatore in tempo reale mostra la dimensione della griglia, il tempo di costruzione e i fotogrammi al secondo.
+				</p>
+			</div>
+		</Fragment>
+	</ProjectBody>
+) : lang === 'es' ? (
+	<ProjectBody
+		title="Cube World Aero"
+		subtitle="Un paisaje de cubos hecho desde cero en WebGL."
+		image="aeroCubeWorld.png"
+		alt="Cube World Aero: un paisaje de cubos verdes con una ciudad, molinos de viento y nubes flotando bajo un cielo azul"
+		url="https://maya2234.github.io/AeroCubeWorld/"
+		cta="Abrir la escena"
+		tags={['WebGL', 'JavaScript', 'Shaders']}
+	>
+		<p>
+			Una pequeña escena WebGL escrita sin librerías 3D: la geometría, las matrices y el sombreado pasan directamente
+			por la API de WebGL, envueltos en una interfaz brillante al estilo Frutiger Aero. Toca para soplar burbujas y arrastra
+			para mirar a tu alrededor.
+		</p>
+
+		<Fragment slot="details">
+			<div>
+				<h2>Cómo está hecha</h2>
+				<p>
+					Un solo cubo se copia por una cuadrícula, se mueve a su celda y se estira en altura, con un color en cada
+					vértice. Las matrices de perspectiva y look-at colocan la cámara, y el fragment shader mezcla los colores de los
+					vértices e ilumina cada cara.
+				</p>
+			</div>
+			<div>
+				<h2>Niveles</h2>
+				<ol>
+					<li>Alturas y color por vértice.</li>
+					<li>Alturas y colores tomados de un mapa de alturas y un mapa de colores.</li>
+					<li>Nubes, mariposas y burbujas que se mueven por curvas de Bézier cúbicas, cada una con su propia matriz de modelo.</li>
+				</ol>
+			</div>
+			<div>
+				<h2>Rendimiento</h2>
+				<p>
+					Todo el paisaje es un único buffer que se dibuja en una sola llamada, así que va fluido hasta decenas de miles
+					de cubos. Un indicador en directo muestra el tamaño de la cuadrícula, el tiempo de construcción y los fotogramas por segundo.
+				</p>
+			</div>
+		</Fragment>
+	</ProjectBody>
+) : (
+	<ProjectBody
+		title="Cube World Aero"
+		subtitle="A cube landscape built from scratch in WebGL."
+		image="aeroCubeWorld.png"
+		alt="Cube World Aero: a green cube landscape with a city, windmills and floating clouds under a blue sky"
+		url="https://maya2234.github.io/AeroCubeWorld/"
+		cta="Open the scene"
+		tags={['WebGL', 'JavaScript', 'Shaders']}
+	>
+		<p>
+			A small WebGL scene written without a 3D library: the geometry, matrices and shading all go straight
+			through the raw WebGL API, wrapped in a glossy Frutiger Aero interface. Tap to blow bubbles and drag
+			to look around.
+		</p>
+
+		<Fragment slot="details">
+			<div>
+				<h2>How it is built</h2>
+				<p>
+					One cube is copied across a grid, moved to its cell and stretched in height, with a colour on each
+					corner. Perspective and look-at matrices place the camera, and the fragment shader blends the corner
+					colours and lights every face.
+				</p>
+			</div>
+			<div>
+				<h2>Levels</h2>
+				<ol>
+					<li>Heights and per-vertex colour.</li>
+					<li>Heights and colours sampled from a height map and a colour map.</li>
+					<li>Clouds, butterflies and bubbles moving along cubic Bézier curves, each with its own model matrix.</li>
+				</ol>
+			</div>
+			<div>
+				<h2>Performance</h2>
+				<p>
+					The whole landscape is one buffer drawn in a single call, so it stays smooth up to tens of thousands
+					of cubes. A live readout shows the grid size, build time and frame rate.
+				</p>
+			</div>
+		</Fragment>
+	</ProjectBody>
+)}

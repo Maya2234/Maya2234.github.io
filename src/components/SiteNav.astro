@@ -1,29 +1,29 @@
 ---
 import Sparkle from './Sparkle.astro';
+import { getLang, languages, localize, switchLang, t, type Lang } from '../i18n';
 
 interface Props {
 	current?: 'home' | 'projects' | 'wall';
 }
 
 const { current } = Astro.props;
-const base = import.meta.env.BASE_URL;
-const tabs = [
-	{ id: 'home', label: 'Home', href: base },
-	{ id: 'projects', label: 'Projects', href: `${base}projects` },
-	{ id: 'wall', label: 'Message wall', href: `${base}message-wall` },
-];
+const lang = getLang(Astro.url);
+const w = t(lang);
 ---
 
+<!-- no menu: the wordmark goes home, and EN | IT switches language (same page, other language) -->
 <nav class="site-nav" aria-label="Main">
-	<a class="wordmark" href={base} aria-label="Maya Tomarchio, home">
-		<Sparkle size={26} />
-		<span>MT</span>
-	</a>
-	<ul>
-		{tabs.map((tab) => (
+	{current !== 'home' && (
+		<a class="wordmark" href={localize(lang)} aria-label={w('nav.home')}>
+			<Sparkle size={26} />
+			<span>MT</span>
+		</a>
+	)}
+	<ul class="langs" aria-label={w('nav.language')}>
+		{(Object.keys(languages) as Lang[]).map((code) => (
 			<li>
-				<a href={tab.href} class:list={['tab', { active: tab.id === current }]} aria-current={tab.id === current ? 'page' : undefined}>
-					{tab.label}
+				<a href={switchLang(Astro.url, code)} hreflang={code} lang={code} aria-current={code === lang ? 'true' : undefined}>
+					{languages[code]}
 				</a>
 			</li>
 		))}
@@ -53,44 +53,48 @@ const tabs = [
 		text-decoration: none;
 	}
 
-	ul {
+	/* EN | IT: small tech-font labels, the current one white and underlined */
+	.langs {
 		display: flex;
-		gap: 0.4rem;
-		margin: 0;
-		padding: 0.3rem;
+		align-items: center;
+		/* stays on the right even when there is no wordmark (the homepage has its own fixed home button) */
+		margin: 0 0 0 auto;
+		padding: 0;
 		list-style: none;
-		border: 2px solid var(--ink);
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.18);
+		font-family: var(--font-tech);
+		font-size: 0.8rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
 	}
 
-	.tab {
-		display: block;
-		padding: 0.55rem 1.1rem;
-		border-radius: 999px;
+	.langs li + li::before {
+		content: '|';
+		margin: 0 0.6rem;
 		color: var(--ink);
-		font-family: var(--font-text);
-		font-size: 0.95rem;
-		font-weight: 600;
+		opacity: 0.5;
+	}
+
+	.langs a {
+		padding: 0.25rem 0;
+		color: var(--ink);
 		text-decoration: none;
-		white-space: nowrap;
-		transition: background-color 0.2s ease, color 0.2s ease;
 	}
 
-	.tab:hover {
-		background: rgba(255, 255, 255, 0.45);
+	.langs a[aria-current] {
+		color: var(--white);
+		text-decoration: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.35em;
 	}
 
-	/* the open tab gets the glossy Aero gel */
-	.tab.active {
-		background: linear-gradient(180deg, #ffffff 0%, #eaf9ff 46%, #b9ecff 52%, #e3f8ff 100%);
-		box-shadow: inset 0 0 0 2px var(--ink);
+	.langs a:hover {
+		color: var(--white);
 	}
 
-	.tab:focus-visible,
+	.langs a:focus-visible,
 	.wordmark:focus-visible {
 		outline: 3px solid var(--white);
-		outline-offset: 2px;
+		outline-offset: 4px;
 	}
 
 	@media (max-width: 520px) {
@@ -100,16 +104,6 @@ const tabs = [
 
 		.wordmark {
 			font-size: 1rem;
-		}
-
-		ul {
-			gap: 0.15rem;
-			padding: 0.2rem;
-		}
-
-		.tab {
-			padding: 0.45rem 0.7rem;
-			font-size: 0.8125rem;
 		}
 	}
 </style>

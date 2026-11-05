@@ -1,121 +1,119 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Sparkle from '../components/Sparkle.astro';
+import { getLang, localize, t } from '../i18n';
 
-const stickers = [
-	{ id: 'sparkle', label: 'Sparkle' },
-	{ id: 'star', label: 'Star' },
-	{ id: 'heart', label: 'Heart' },
-	{ id: 'bubble', label: 'Bubble' },
-];
-const colors = [
-	{ id: 'pink', label: 'Pink' },
-	{ id: 'cyan', label: 'Cyan' },
-	{ id: 'white', label: 'White' },
-];
+const lang = getLang(Astro.url);
+const w = t(lang);
+// the words the wall's script shows, in this page's language
+const words = {
+	mine: w('wall.mine'),
+	edit: w('wall.edit'),
+	write: w('wall.write'),
+	locked: w('wall.locked'),
+	saved: w('wall.saved'),
+	removed: w('wall.removed'),
+	wait: w('wall.wait'),
+	savedEdit: w('wall.savedEdit'),
+	failed: w('wall.failed'),
+	loadFailed: w('wall.loadFailed'),
+};
 ---
 
-<Layout current="wall" title="Message wall">
+<Layout current="wall" title={w('wall.title')} bare>
 	<main class="wall-page">
-		<header class="page-head">
-			<h1>Message<span class="spark-anchor"><Sparkle size={44} class="head-spark" /></span> wall</h1>
-			<p class="lede"></p>
-		</header>
-
-		<p class="preview-note" id="preview-note" hidden>
-		</p>
-
-		<div class="wall-layout">
-			<section class="window compose" aria-labelledby="compose-title">
-				<div class="window-bar">
-					<span id="compose-title">new_message.exe</span>
-					<span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
-				</div>
-				<form id="wall-form" class="compose-body" novalidate>
-					<label class="field">
-						<span>Your name</span>
-						<input name="name" type="text" maxlength="40" autocomplete="name" required />
-					</label>
-
-					<label class="field">
-						<span>Message</span>
-						<textarea name="message" rows="5" maxlength="280" required aria-describedby="count"></textarea>
-						<span class="count" id="count">0 / 280</span>
-					</label>
-
-					<fieldset class="picker">
-						<legend>Sticker</legend>
-						<div class="options">
-							{stickers.map((s, i) => (
-								<label class="option sticker-option">
-									<input type="radio" name="sticker" value={s.id} checked={i === 0} />
-									<span class="chip" data-sticker={s.id}><span class="visually-hidden">{s.label}</span></span>
-								</label>
-							))}
-						</div>
-					</fieldset>
-
-					<fieldset class="picker">
-						<legend>Note colour</legend>
-						<div class="options">
-							{colors.map((c, i) => (
-								<label class="option">
-									<input type="radio" name="color" value={c.id} checked={i === 0} />
-									<span class={`swatch swatch-${c.id}`}><span class="visually-hidden">{c.label}</span></span>
-								</label>
-							))}
-						</div>
-					</fieldset>
-
-					<!-- bots fill every field; people never see this one -->
-					<label class="trap" aria-hidden="true">
-						Leave empty <input name="website" type="text" tabindex="-1" autocomplete="off" />
-					</label>
-
-					<button type="submit" class="btn-gloss">Post to the wall</button>
-					<p class="status" id="status" role="status" aria-live="polite"></p>
-				</form>
-			</section>
-
-			<section class="board" aria-labelledby="board-title">
-				<h2 id="board-title" class="visually-hidden">Messages</h2>
-				<p class="empty" id="empty">No messages yet. Be the first to sign the wall.</p>
-				<ul class="notes" id="notes"></ul>
-			</section>
+		<h1 class="visually-hidden">{w('wall.title')}</h1>
+		<!-- back to the guest book, just off the right edge of the home page -->
+		<div class="back">
+			<a class="btn-gloss" href={`${localize(lang)}#book`} aria-label={w('wall.back')}>
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
+				<span>{w('wall.backText')}</span>
+			</a>
 		</div>
+
+		<!--
+			One big sheet of lined paper. Click (or tap) anywhere on it to start writing there; Enter or clicking away saves.
+			Notes you wrote in this browser session stay editable; everyone else's are read-only.
+		-->
+		<section class="paper" id="paper" aria-label={w('wall.paper')} data-words={JSON.stringify(words)}>
+		</section>
+		<p class="status" id="status" role="status" aria-live="polite"></p>
 	</main>
 </Layout>
 
 <script>
-	type Note = { id: number | string; name: string; message: string; sticker: string; color: string; created_at: string };
+	type Note = { id: string; x: number; line: number; body: string };
 
 	const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string | undefined;
 	const SUPABASE_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string | undefined;
 	const live = Boolean(SUPABASE_URL && SUPABASE_KEY && !SUPABASE_URL.includes('your-project-ref'));
-	const LOCAL_KEY = 'mt-wall-preview';
-	const COOLDOWN_KEY = 'mt-wall-last-post';
-	const COOLDOWN_MS = 30_000;
 
-	const STICKERS: Record<string, string> = {
-		sparkle: '<path d="M12 0c1 7.5 4.5 11 12 12-7.5 1-11 4.5-12 12-1-7.5-4.5-11-12-12C7.5 11 11 7.5 12 0z"/>',
-		star: '<path d="M12 1.5l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.6l-6.4 3.5L7 14l-5.3-5 7.2-.9z"/>',
-		heart: '<path d="M12 21.4l-1.5-1.3C5 15.2 1.5 12 1.5 8.1 1.5 5 4 2.5 7.1 2.5c1.8 0 3.5.8 4.9 2.1 1.4-1.3 3.1-2.1 4.9-2.1 3.1 0 5.6 2.5 5.6 5.6 0 3.9-3.5 7.1-9 12z"/>',
-		bubble: '<circle cx="12" cy="12" r="10"/><ellipse cx="8.5" cy="7.5" rx="3.2" ry="2" fill="#fff" opacity=".85"/>',
+	const LOCAL_KEY = 'mt-wall-notes'; // preview mode only: every note, in this browser
+	const MINE_KEY = 'mt-wall-mine'; // this browser session's notes: id -> edit token
+	const COOLDOWN_KEY = 'mt-wall-last-post';
+	const COOLDOWN_MS = 3_000;
+	const MAX_LEN = 280;
+	const MAX_LINE = 2000;
+	const SPARE_LINES = 12; // blank paper kept below the lowest note so there's always room to write
+
+	const paper = document.querySelector<HTMLElement>('#paper')!;
+	const words: Record<string, string> = JSON.parse(paper.dataset.words ?? '{}');
+
+	// opened in the homepage's overlay: the back button (and Escape) close the overlay instead of leaving
+	const embedded = window.self !== window.top;
+	if (embedded) {
+		const close = () => parent.postMessage({ type: 'wall:close' }, location.origin);
+		document.querySelector<HTMLAnchorElement>('.back a')?.addEventListener('click', (e) => {
+			e.preventDefault();
+			close();
+		});
+		addEventListener('keydown', (e) => {
+			if (e.key === 'Escape' && !(e.target as HTMLElement).closest('textarea')) close();
+		});
+	}
+	const hint = document.querySelector<HTMLElement>('#hint'); // optional
+	const status = document.querySelector<HTMLElement>('#status')!;
+	const writeBtn = document.querySelector<HTMLButtonElement>('#write-btn'); // optional keyboard route
+
+	// the rule spacing comes from CSS so the notes always sit on the lines
+	const lineHeight = () => parseFloat(getComputedStyle(paper).getPropertyValue('--rule')) || 32;
+	const topMargin = () => parseFloat(getComputedStyle(paper).getPropertyValue('--top')) || 64;
+
+	const notes = new Map<string, Note>();
+	const elements = new Map<string, HTMLElement>();
+
+	// ---------- storage ----------
+
+	const safeGet = (store: Storage, key: string) => {
+		try {
+			return store.getItem(key);
+		} catch {
+			return null;
+		}
+	};
+	const safeSet = (store: Storage, key: string, value: string) => {
+		try {
+			store.setItem(key, value);
+		} catch {
+			/* storage blocked: things still work until the page reloads */
+		}
 	};
 
-	const form = document.querySelector<HTMLFormElement>('#wall-form')!;
-	const list = document.querySelector<HTMLUListElement>('#notes')!;
-	const empty = document.querySelector<HTMLParagraphElement>('#empty')!;
-	const status = document.querySelector<HTMLParagraphElement>('#status')!;
-	const count = document.querySelector<HTMLSpanElement>('#count')!;
-	const textarea = form.querySelector<HTMLTextAreaElement>('textarea')!;
-	const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+	const mine: Record<string, string> = JSON.parse(safeGet(sessionStorage, MINE_KEY) ?? '{}');
+	const rememberMine = (id: string, token: string | null) => {
+		if (token) mine[id] = token;
+		else delete mine[id];
+		safeSet(sessionStorage, MINE_KEY, JSON.stringify(mine));
+	};
 
-	document.querySelectorAll<HTMLElement>('.chip[data-sticker]').forEach((chip) => {
-		chip.insertAdjacentHTML('afterbegin', `<svg viewBox="0 0 24 24" aria-hidden="true">${STICKERS[chip.dataset.sticker!]}</svg>`);
-	});
-
-	if (!live) document.querySelector<HTMLElement>('#preview-note')!.hidden = false;
+	type StoredLocal = Note & { token: string };
+	const readLocal = (): StoredLocal[] => {
+		try {
+			return JSON.parse(safeGet(localStorage, LOCAL_KEY) ?? '[]');
+		} catch {
+			return [];
+		}
+	};
+	const writeLocal = (list: StoredLocal[]) => safeSet(localStorage, LOCAL_KEY, JSON.stringify(list));
 
 	const headers = () => ({
 		apikey: SUPABASE_KEY!,
@@ -123,460 +121,417 @@ const colors = [
 		'Content-Type': 'application/json',
 	});
 
-	const readLocal = (): Note[] => {
-		try {
-			return JSON.parse(localStorage.getItem(LOCAL_KEY) ?? '[]');
-		} catch {
-			return [];
-		}
-	};
+	async function rpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
+		const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+			method: 'POST',
+			headers: headers(),
+			body: JSON.stringify(args),
+		});
+		if (!res.ok) throw new Error(`${name} failed: ${res.status}`);
+		return res.json();
+	}
 
 	async function loadNotes(): Promise<Note[]> {
-		if (!live) return readLocal();
+		if (!live) return readLocal().map(({ token, ...note }) => note);
 		const res = await fetch(
-			`${SUPABASE_URL}/rest/v1/messages?select=id,name,message,sticker,color,created_at&order=created_at.desc&limit=200`,
+			`${SUPABASE_URL}/rest/v1/wall_notes?select=id,x,line,body&order=created_at.asc&limit=2000`,
 			{ headers: headers() },
 		);
 		if (!res.ok) throw new Error(`Load failed: ${res.status}`);
 		return res.json();
 	}
 
-	async function saveNote(note: Omit<Note, 'id' | 'created_at'>): Promise<Note> {
+	// new notes get an edit token from the server; only this session knows it
+	async function addNote(x: number, line: number, body: string): Promise<{ note: Note; token: string }> {
 		if (!live) {
-			const saved = { ...note, id: Date.now(), created_at: new Date().toISOString() };
-			try {
-				localStorage.setItem(LOCAL_KEY, JSON.stringify([saved, ...readLocal()].slice(0, 200)));
-			} catch {
-				/* storage blocked: the note still shows until the page reloads */
-			}
-			return saved;
+			const note = { id: crypto.randomUUID(), x, line, body };
+			const token = crypto.randomUUID();
+			writeLocal([...readLocal(), { ...note, token }]);
+			return { note, token };
 		}
-		const res = await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
-			method: 'POST',
-			headers: { ...headers(), Prefer: 'return=representation' },
-			body: JSON.stringify(note),
+		const [row] = await rpc<{ id: string; token: string }[]>('add_wall_note', { p_x: x, p_line: line, p_body: body });
+		return { note: { id: row.id, x, line, body }, token: row.token };
+	}
+
+	// an empty body removes the note; the server only allows it with that note's token
+	async function editNote(id: string, token: string, body: string): Promise<boolean> {
+		if (!live) {
+			const list = readLocal();
+			const i = list.findIndex((n) => n.id === id && n.token === token);
+			if (i < 0) return false;
+			if (body) list[i].body = body;
+			else list.splice(i, 1);
+			writeLocal(list);
+			return true;
+		}
+		return rpc<boolean>('edit_wall_note', { p_id: id, p_token: token, p_body: body });
+	}
+
+	// ---------- drawing ----------
+
+	function place(el: HTMLElement, x: number, line: number) {
+		el.style.left = `${x * 100}%`;
+		el.style.top = `${topMargin() + line * lineHeight()}px`;
+		el.style.maxWidth = `calc(${(1 - x) * 100}% - 1rem)`;
+	}
+
+	function fitPaper() {
+		let lowest = 0;
+		elements.forEach((el) => {
+			lowest = Math.max(lowest, el.offsetTop + el.offsetHeight);
 		});
-		if (!res.ok) throw new Error(`Post failed: ${res.status}`);
-		return (await res.json())[0];
+		paper.style.minHeight = `max(100dvh, ${lowest + SPARE_LINES * lineHeight()}px)`;
+		if (hint) hint.hidden = notes.size > 0;
 	}
 
-	const formatDate = (iso: string) =>
-		new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-
-	function renderNote(note: Note, fresh = false) {
-		const li = document.createElement('li');
-		li.className = `note note-${['pink', 'cyan', 'white'].includes(note.color) ? note.color : 'pink'}`;
-		if (fresh) li.classList.add('is-new');
-
-		const sticker = document.createElement('span');
-		sticker.className = 'note-sticker';
-		sticker.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${STICKERS[note.sticker] ?? STICKERS.sparkle}</svg>`;
-
-		const msg = document.createElement('p');
-		msg.className = 'note-message';
-		msg.textContent = note.message;
-
-		const meta = document.createElement('p');
-		meta.className = 'note-meta';
-		const who = document.createElement('strong');
-		who.textContent = note.name;
-		const when = document.createElement('time');
-		when.dateTime = note.created_at;
-		when.textContent = formatDate(note.created_at);
-		meta.append(who, when);
-
-		li.append(sticker, msg, meta);
-		return li;
-	}
-
-	function render(notes: Note[]) {
-		list.replaceChildren(...notes.map((n) => renderNote(n)));
-		empty.hidden = notes.length > 0;
-	}
-
-	textarea.addEventListener('input', () => {
-		count.textContent = `${textarea.value.length} / 280`;
-	});
-
-	form.addEventListener('submit', async (event) => {
-		event.preventDefault();
-		const data = new FormData(form);
-		if (String(data.get('website') ?? '')) return;
-
-		const name = String(data.get('name') ?? '').trim();
-		const message = String(data.get('message') ?? '').trim();
-		if (!name || !message) {
-			status.textContent = !name ? 'Add your name first.' : 'Write a message first.';
-			(form.elements.namedItem(!name ? 'name' : 'message') as HTMLElement).focus();
-			return;
+	function drawNote(note: Note) {
+		let el = elements.get(note.id);
+		if (!el) {
+			el = document.createElement('p');
+			el.className = 'note';
+			el.dataset.id = note.id;
+			paper.append(el);
+			elements.set(note.id, el);
 		}
-
-		const last = Number(localStorage.getItem(COOLDOWN_KEY) ?? 0);
-		if (Date.now() - last < COOLDOWN_MS) {
-			status.textContent = 'Thanks! Give it a few seconds before posting again.';
-			return;
+		el.textContent = note.body;
+		el.classList.toggle('is-mine', note.id in mine);
+		if (note.id in mine) {
+			el.tabIndex = 0;
+			el.title = words.mine;
+			el.setAttribute('role', 'button');
 		}
+		place(el, note.x, note.line);
+	}
 
-		submit.disabled = true;
-		status.textContent = 'Posting…';
-		try {
-			const saved = await saveNote({
-				name,
-				message,
-				sticker: String(data.get('sticker') ?? 'sparkle'),
-				color: String(data.get('color') ?? 'pink'),
-			});
-			try {
-				localStorage.setItem(COOLDOWN_KEY, String(Date.now()));
-			} catch {
-				/* no storage: skip the cooldown */
+	// ---------- writing ----------
+
+	let draft: HTMLTextAreaElement | null = null;
+
+	function openEditor(x: number, line: number, editing?: Note) {
+		// moving to a new spot keeps whatever was being written
+		if (draft) closeEditor(true);
+		const ta = document.createElement('textarea');
+		ta.className = 'note note-draft';
+		ta.maxLength = MAX_LEN;
+		ta.rows = 1;
+		ta.spellcheck = true;
+		ta.setAttribute('aria-label', editing ? words.edit : words.write);
+		ta.value = editing?.body ?? '';
+		ta.dataset.x = String(x);
+		ta.dataset.line = String(line);
+		if (editing) {
+			ta.dataset.id = editing.id;
+			elements.get(editing.id)!.hidden = true;
+		}
+		place(ta, x, line);
+		paper.append(ta);
+		draft = ta;
+		if (hint) hint.hidden = true;
+
+		const grow = () => {
+			ta.style.height = '0';
+			ta.style.height = `${Math.ceil(ta.scrollHeight / lineHeight()) * lineHeight()}px`;
+		};
+		grow();
+		ta.addEventListener('input', grow);
+		ta.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter' && !e.shiftKey) {
+				e.preventDefault();
+				closeEditor(true);
+			} else if (e.key === 'Escape') {
+				e.preventDefault();
+				closeEditor(false);
 			}
-			list.prepend(renderNote(saved, true));
-			empty.hidden = true;
-			form.reset();
-			count.textContent = '0 / 280';
-			status.textContent = 'Posted. Thank you for signing the wall!';
+		});
+		ta.addEventListener('blur', () => {
+			// let a click that moved focus elsewhere on the paper finish first
+			setTimeout(() => draft === ta && closeEditor(true), 0);
+		});
+		ta.focus();
+		ta.setSelectionRange(ta.value.length, ta.value.length);
+	}
+
+	async function closeEditor(save: boolean) {
+		const ta = draft;
+		if (!ta) return;
+		draft = null;
+		const body = ta.value.trim().slice(0, MAX_LEN);
+		const id = ta.dataset.id;
+		const x = Number(ta.dataset.x);
+		const line = Number(ta.dataset.line);
+		ta.remove();
+		const old = id ? elements.get(id) : undefined;
+		if (old) old.hidden = false;
+
+		if (!save) return fitPaper();
+
+		try {
+			if (id) {
+				const note = notes.get(id)!;
+				if (body === note.body) return fitPaper();
+				const ok = await editNote(id, mine[id], body);
+				if (!ok) {
+					rememberMine(id, null);
+					drawNote(note);
+					say(words.locked);
+				} else if (body) {
+					note.body = body;
+					drawNote(note);
+					say(words.saved);
+				} else {
+					notes.delete(id);
+					elements.get(id)?.remove();
+					elements.delete(id);
+					rememberMine(id, null);
+					say(words.removed);
+				}
+			} else if (body) {
+				const last = Number(safeGet(localStorage, COOLDOWN_KEY) ?? 0);
+				if (Date.now() - last < COOLDOWN_MS) {
+					// too quick: keep the words open in place instead of losing them
+					say(words.wait);
+					openEditor(x, line);
+					draft!.value = body;
+					draft!.dispatchEvent(new Event('input'));
+					return;
+				}
+				const { note, token } = await addNote(x, line, body);
+				safeSet(localStorage, COOLDOWN_KEY, String(Date.now()));
+				rememberMine(note.id, token);
+				notes.set(note.id, note);
+				drawNote(note);
+				say(words.savedEdit);
+			}
 		} catch (error) {
 			console.error(error);
-			status.textContent = 'That didn’t post. Please try again in a moment.';
-		} finally {
-			submit.disabled = false;
+			say(words.failed);
+		}
+		fitPaper();
+	}
+
+	let sayTimer = 0;
+	function say(text: string) {
+		status.textContent = text;
+		clearTimeout(sayTimer);
+		sayTimer = window.setTimeout(() => (status.textContent = ''), 4000);
+	}
+
+	// where on the paper a click lands, snapped to a ruled line
+	function spot(e: MouseEvent) {
+		const box = paper.getBoundingClientRect();
+		const minX = 12 / box.width;
+		const maxX = Math.max(minX, 1 - 160 / box.width); // leave room for a few words
+		const x = Math.min(Math.max((e.clientX - box.left - 4) / box.width, minX), maxX);
+		const line = Math.floor((e.clientY - box.top - topMargin()) / lineHeight());
+		return { x: Math.round(x * 1000) / 1000, line: Math.min(Math.max(line, 0), MAX_LINE) };
+	}
+
+	paper.addEventListener('click', (e) => {
+		const target = e.target as HTMLElement;
+		if (target.closest('.note-draft, .write-btn')) return;
+		const noteEl = target.closest<HTMLElement>('.note');
+		if (noteEl) {
+			// your own notes open for editing; other people's are read-only
+			const note = notes.get(noteEl.dataset.id!);
+			if (note && note.id in mine) openEditor(note.x, note.line, note);
+			return;
+		}
+		const { x, line } = spot(e);
+		if (line < 0) return;
+		openEditor(x, line);
+	});
+
+	paper.addEventListener('keydown', (e) => {
+		const el = (e.target as HTMLElement).closest<HTMLElement>('.note.is-mine');
+		if (el && (e.key === 'Enter' || e.key === ' ')) {
+			e.preventDefault();
+			const note = notes.get(el.dataset.id!);
+			if (note) openEditor(note.x, note.line, note);
 		}
 	});
 
+	// keyboard route: start a note on the first free line at the left margin
+	writeBtn?.addEventListener('click', () => {
+		const used = new Set<number>();
+		notes.forEach((n) => used.add(n.line));
+		let line = 0;
+		while (used.has(line)) line++;
+		openEditor(0.08, line);
+	});
+
+	// notes wrap differently at new widths, so re-measure when the paper gets wider or narrower
+	let lastWidth = 0;
+	new ResizeObserver(() => {
+		if (paper.clientWidth === lastWidth) return;
+		lastWidth = paper.clientWidth;
+		notes.forEach((n) => drawNote(n));
+		fitPaper();
+	}).observe(paper);
+
 	loadNotes()
-		.then(render)
+		.then((list) => {
+			list.forEach((n) => {
+				notes.set(n.id, n);
+				drawNote(n);
+			});
+			fitPaper();
+		})
 		.catch((error) => {
 			console.error(error);
-			empty.textContent = 'The wall couldn’t load right now. Please try again later.';
+			say(words.loadFailed);
+			fitPaper();
 		});
 </script>
 
 <style>
+	/* the paper is the whole page */
 	.wall-page {
-		max-width: 1240px;
-		margin: 0 auto;
-		padding: 3.5rem 8vw 0;
+		min-height: 100vh;
+		min-height: 100dvh;
 	}
 
-	.page-head {
+	/* same glossy blue pill as the other buttons, pinned to the corner */
+	.back {
+		position: fixed;
+		top: 16px;
+		left: 16px;
+		z-index: 5;
+	}
+
+	.back .btn-gloss {
+		padding: 0.6rem 1.3rem 0.6rem 1rem;
+	}
+
+	.back svg {
+		width: 1.15rem;
+		height: 1.15rem;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2.5;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	.back .btn-gloss:focus-visible {
+		outline: 3px solid var(--pink-deep);
+		outline-offset: 3px;
+	}
+
+	/* plain lined paper: faint blue rules, a pink margin line, and room to keep writing */
+	.paper {
+		--rule: 32px;
+		--top: 64px;
 		position: relative;
-		max-width: 46rem;
-		margin-bottom: 3rem;
+		min-height: 100vh;
+		min-height: 100dvh;
+		background:
+			linear-gradient(90deg, transparent calc(5% - 1px), rgba(230, 62, 125, 0.55) calc(5% - 1px), rgba(230, 62, 125, 0.55) calc(5% + 1px), transparent calc(5% + 1px)),
+			repeating-linear-gradient(180deg, transparent 0, transparent calc(var(--rule) - 1px), rgba(40, 120, 200, 0.28) calc(var(--rule) - 1px), rgba(40, 120, 200, 0.28) var(--rule)) 0 var(--top) / 100% calc(100% - var(--top)) no-repeat,
+			#fffdf8;
+		cursor: text;
+		overflow: hidden;
 	}
 
-	h1 {
-		margin: 0;
-		font-family: var(--font-display);
-		font-size: clamp(2.5rem, 6vw, 4.75rem);
-		font-weight: 900;
-		line-height: 1;
-		letter-spacing: -0.03em;
-		text-transform: uppercase;
-		color: var(--white);
-	}
-
-	/* zero-width hook at the end of "Message" so the sparkle sits on that word's top-right corner */
-	.spark-anchor {
-		position: relative;
-		display: inline-block;
-		width: 0;
-		height: 0;
-	}
-
-	.spark-anchor :global(.head-spark) {
+	.hint {
 		position: absolute;
-		bottom: 0.35em;
-		left: -6px;
-	}
-
-	.lede {
-		margin: 1.25rem 0 0;
-		font-size: 1.25rem;
-		font-weight: 600;
-		line-height: 1.45;
-	}
-
-	.preview-note {
-		margin: 0 0 2rem;
-		padding: 0.9rem 1.1rem;
-		border: 2px dashed var(--ink);
-		border-radius: 10px;
-		background: rgba(255, 255, 255, 0.35);
-		font-size: 1rem;
-	}
-
-	.wall-layout {
-		display: grid;
-		grid-template-columns: minmax(300px, 380px) 1fr;
-		gap: 3rem;
-		align-items: start;
-	}
-
-	.compose {
-		position: sticky;
-		top: 1.5rem;
-	}
-
-	.compose-body {
-		display: grid;
-		gap: 1.1rem;
-		padding: 1.4rem;
-		background: var(--pink-soft);
-	}
-
-	.field {
-		position: relative;
-		display: grid;
-		gap: 0.4rem;
-		font-weight: 600;
-	}
-
-	.field input,
-	.field textarea {
-		width: 100%;
-		box-sizing: border-box;
-		padding: 0.75rem 0.9rem;
-		border: 2px solid var(--ink);
-		border-radius: 10px;
-		background: var(--white);
-		color: var(--ink);
-		font: inherit;
-		font-weight: 400;
-	}
-
-	.field textarea {
-		resize: vertical;
-		min-height: 7.5rem;
-	}
-
-	.field input:focus-visible,
-	.field textarea:focus-visible {
-		outline: 3px solid var(--cyan);
-		outline-offset: 1px;
-	}
-
-	.count {
-		justify-self: end;
-		font-size: 0.875rem;
-		font-weight: 400;
-		font-variant-numeric: tabular-nums;
-	}
-
-	.picker {
+		top: calc(var(--top) + var(--rule) * 1);
+		left: 8%;
 		margin: 0;
-		padding: 0;
-		border: 0;
-	}
-
-	.picker legend {
-		padding: 0;
-		margin-bottom: 0.5rem;
-		font-weight: 600;
-	}
-
-	.options {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-	}
-
-	.option input {
-		position: absolute;
-		opacity: 0;
+		line-height: var(--rule);
+		color: rgba(17, 17, 17, 0.4);
+		font-style: italic;
 		pointer-events: none;
 	}
 
-	.chip,
-	.swatch {
-		display: grid;
-		place-items: center;
-		width: 2.75rem;
-		height: 2.75rem;
-		border: 2px solid var(--ink);
-		border-radius: 50%;
-		background: var(--white);
-		transition: transform 0.2s var(--ease-out), box-shadow 0.2s ease;
-	}
-
-	.chip :global(svg) {
-		width: 1.4rem;
-		height: 1.4rem;
-		fill: var(--pink);
-		stroke: var(--ink);
-		stroke-width: 1;
-	}
-
-	.swatch-pink {
-		background: #ff8fc0;
-	}
-
-	.swatch-cyan {
-		background: var(--cyan);
-	}
-
-	.swatch-white {
-		background: var(--white);
-	}
-
-	.option:hover .chip,
-	.option:hover .swatch {
-		transform: translateY(-2px);
-	}
-
-	.option input:checked + .chip,
-	.option input:checked + .swatch {
-		box-shadow: 0 0 0 3px var(--pink-soft), 0 0 0 6px var(--ink);
-	}
-
-	.option input:focus-visible + .chip,
-	.option input:focus-visible + .swatch {
-		outline: 3px solid var(--cyan);
-		outline-offset: 6px;
-	}
-
-	.trap {
+	/* a note is plain writing on the lines */
+	.paper :global(.note) {
 		position: absolute;
-		left: -9999px;
-	}
-
-	.compose .btn-gloss {
-		justify-self: start;
-	}
-
-	.status {
-		min-height: 1.4em;
-		margin: 0;
-		font-size: 1rem;
-	}
-
-	.empty {
-		margin: 0;
-		padding: 3rem 1.5rem;
-		font-size: 1.125rem;
-		font-weight: 600;
-		text-align: center;
-	}
-
-	/* dotted grid board behind the notes */
-	.board {
-		align-self: stretch;
 		box-sizing: border-box;
-		min-height: 22rem;
-		padding: 1.5rem;
-		border: 2px solid var(--ink);
-		border-radius: 14px;
-		background: radial-gradient(rgba(17, 17, 17, 0.22) 1.2px, transparent 1.5px) 0 0 / 18px 18px,
-			rgba(255, 255, 255, 0.12);
-	}
-
-	.notes {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-		gap: 2rem 1.5rem;
-		align-items: start;
+		min-width: 9rem;
 		margin: 0;
-		padding: 0.75rem 0 0;
-		list-style: none;
-	}
-
-	.notes :global(.note) {
-		position: relative;
-		margin: 0;
-		padding: 1.4rem 1.3rem 1.1rem;
-		border: 2px solid var(--ink);
-		border-radius: 14px;
-		background: #ff9ccb;
-		transform: rotate(-0.8deg);
-		transition: transform 0.25s var(--ease-out);
-	}
-
-	.notes :global(.note:nth-child(3n + 2)) {
-		transform: rotate(0.9deg);
-	}
-
-	.notes :global(.note:nth-child(3n)) {
-		transform: rotate(-0.3deg);
-	}
-
-	.notes :global(.note:hover) {
-		transform: rotate(0deg) translateY(-3px);
-	}
-
-	.notes :global(.note-cyan) {
-		background: #8ff6ff;
-	}
-
-	.notes :global(.note-white) {
-		background: var(--white);
-	}
-
-	.notes :global(.note.is-new) {
-		animation: note-in 0.6s var(--ease-out) both;
-	}
-
-	@keyframes note-in {
-		from {
-			opacity: 0;
-			transform: translateY(-16px) scale(0.94);
-		}
-	}
-
-	.notes :global(.note-sticker) {
-		position: absolute;
-		top: -14px;
-		right: 14px;
-		display: grid;
-		place-items: center;
-		width: 2.2rem;
-		height: 2.2rem;
-		border: 2px solid var(--ink);
-		border-radius: 50%;
-		background: var(--white);
-	}
-
-	.notes :global(.note-sticker svg) {
-		width: 1.2rem;
-		height: 1.2rem;
-		fill: var(--pink);
-		stroke: var(--ink);
-		stroke-width: 1;
-	}
-
-	.notes :global(.note-message) {
-		margin: 0;
-		font-size: 1.0625rem;
-		line-height: 1.5;
+		padding: 0 0.25rem;
+		font-family: var(--font-text);
+		font-size: 1.05rem;
+		line-height: var(--rule);
+		color: var(--ink);
+		white-space: pre-wrap;
 		overflow-wrap: anywhere;
+		cursor: default;
 	}
 
-	.notes :global(.note-meta) {
-		display: flex;
-		justify-content: space-between;
-		gap: 1rem;
-		margin: 0.9rem 0 0;
-		font-size: 0.9375rem;
+	/* your own notes from this session: a pink ink, and they can be clicked to edit */
+	.paper :global(.note.is-mine) {
+		color: var(--pink-deep);
+		border-radius: 4px;
+		cursor: text;
 	}
 
-	@media (prefers-reduced-motion: reduce) {
-		.notes :global(.note.is-new) {
-			animation: none;
-		}
+	.paper :global(.note.is-mine:hover),
+	.paper :global(.note.is-mine:focus-visible) {
+		outline: 1.5px dashed var(--pink-deep);
+		outline-offset: 2px;
 	}
 
-	@media (max-width: 860px) {
-		.wall-layout {
-			grid-template-columns: 1fr;
-		}
-
-		.compose {
-			position: static;
-		}
+	.paper :global(.note-draft) {
+		width: 22rem;
+		height: var(--rule);
+		border: 0;
+		border-radius: 4px;
+		outline: 1.5px dashed var(--pink-deep);
+		outline-offset: 2px;
+		background: rgba(255, 211, 230, 0.35);
+		color: var(--pink-deep);
+		resize: none;
+		overflow: hidden;
+		caret-color: var(--pink-deep);
 	}
 
-	@media (max-width: 768px) {
-		.wall-page {
-			padding: 2.5rem 20px 0;
+	/* the keyboard route; tucked in the top corner of the paper */
+	.write-btn {
+		position: absolute;
+		top: 14px;
+		right: 14px;
+		z-index: 2;
+		padding: 0.4rem 0.9rem;
+		border: 1.5px solid var(--ink);
+		border-radius: 999px;
+		background: var(--white);
+		color: var(--ink);
+		font: 600 0.875rem var(--font-text);
+	}
+
+	.write-btn:hover {
+		background: var(--pink-soft);
+	}
+
+	.write-btn:focus-visible {
+		outline: 3px solid var(--pink-deep);
+		outline-offset: 2px;
+	}
+
+	/* save messages float at the bottom of the screen */
+	.status {
+		position: fixed;
+		bottom: 16px;
+		left: 50%;
+		z-index: 5;
+		margin: 0;
+		padding: 0.45rem 1rem;
+		border: 1.5px solid var(--ink);
+		border-radius: 999px;
+		background: var(--white);
+		font-weight: 600;
+		transform: translateX(-50%);
+	}
+
+	.status:empty {
+		display: none;
+	}
+
+	@media (max-width: 760px) {
+		.paper :global(.note-draft) {
+			width: auto;
+			right: 0.5rem;
 		}
 	}
 </style>

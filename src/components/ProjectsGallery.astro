@@ -1,17 +1,30 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import { projects, courses } from '../data/projects';
+// The projects gallery. On the homepage it lives just to the LEFT of home, in the same panning world as the guest book
+// (see BookBay): "All projects" pans over to it, and holding the cursor at the left edge does too.
+import { getCourses, getProjects } from '../data/projects';
+import { getLang, t } from '../i18n';
+
+const lang = getLang(Astro.url);
+const w = t(lang);
+const projects = getProjects(lang);
+const courses = getCourses(lang);
 ---
 
-<Layout current="projects" title="Projects">
-	<main class="all-projects-page">
+<section class="projects-bay" id="projects-panel" aria-label={w('gallery.aria')}>
+	<div class="all-projects-page">
+		<!-- home is to the right of the projects, so this one points right -->
+		<a class="btn-gloss back-home" href="#home">
+			<span>{w('gallery.home')}</span>
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+		</a>
+
 		<header class="page-head">
-			<h1>Projects</h1>
-			<div class="courses" role="group" aria-label="Filter by class">
-				<button type="button" class="course-filter" data-course="all" aria-pressed="true">All</button>
+			<h1>{w('gallery.title')}</h1>
+			<div class="courses" role="group" aria-label={w('gallery.filters')}>
+				<button type="button" class="course-filter" data-course="all" aria-pressed="true">{w('gallery.all')}</button>
 				{courses.map((course) => (
 					<button type="button" class="course-filter" data-course={course.id} aria-pressed="false">
-						{course.title} <span class="code">{course.code}</span>
+						{course.title}{course.code && <span class="code"> {course.code}</span>}
 					</button>
 				))}
 			</div>
@@ -28,14 +41,14 @@ import { projects, courses } from '../data/projects';
 						{...(project.external ? { target: '_blank', rel: 'noreferrer' } : {})}
 					>
 						<span class="window-bar">
-							<span>{project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}{project.external ? '.www' : '.exe'}</span>
+							<span></span>
 							<span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
 						</span>
 						<span class="card-shot">
 							<img src={project.image} alt={project.alt} loading="lazy" />
 						</span>
 						<span class="card-text">
-							<span class="card-title">{project.title}{project.external && <span class="visually-hidden"> (opens in a new tab)</span>}</span>
+							<span class="card-title">{project.title}{project.external && <span class="visually-hidden">{w('gallery.newTab')}</span>}</span>
 							<span class="card-blurb">{project.blurb}</span>
 							<span class="tags">
 								{project.tags.map((tag) => <span class="tag">{tag}</span>)}
@@ -45,12 +58,11 @@ import { projects, courses } from '../data/projects';
 				</li>
 			))}
 		</ul>
-	</main>
-</Layout>
+	</div>
+</section>
 
 <script>
-	import { courses } from '../data/projects';
-
+	
 	const grid = document.querySelector<HTMLUListElement>('#cards')!;
 	const status = document.querySelector<HTMLParagraphElement>('#filter-status')!;
 	const buttons = document.querySelectorAll<HTMLButtonElement>('.course-filter');
@@ -69,20 +81,15 @@ import { projects, courses } from '../data/projects';
 
 		buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.course === course)));
 
-		const title = courses.find((c) => c.id === course)?.title;
-		status.textContent =
-			course === 'all'
-				? ''
-				: matches.length
-					? `${matches.length} ${matches.length === 1 ? 'project' : 'projects'} from ${title}.`
-					: `No projects from ${title} yet.`;
 
 		if (reduceMotion) return;
+		// on the zoomed homepage canvas, screen distances are scaled: undo that for the glide
+		const zoom = grid.getBoundingClientRect().width / grid.offsetWidth || 1;
 		items.forEach((li) => {
 			const from = before.get(li)!;
 			const to = li.getBoundingClientRect();
-			const dx = from.left - to.left;
-			const dy = from.top - to.top;
+			const dx = (from.left - to.left) / zoom;
+			const dy = (from.top - to.top) / zoom;
 			if (dx || dy) {
 				li.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], {
 					duration: 450,
@@ -97,6 +104,30 @@ import { projects, courses } from '../data/projects';
 </script>
 
 <style>
+	/* sits off the left edge of the world, a full screen wide */
+	.projects-bay {
+		position: absolute;
+		top: 0;
+		right: 100%;
+		width: 100%;
+	}
+
+	/* glossy button back over to home, which sits to the right */
+	.back-home {
+		margin-bottom: 2.5rem;
+		padding: 0.7rem 1.2rem 0.7rem 1.5rem;
+	}
+
+	.back-home svg {
+		width: 1.15rem;
+		height: 1.15rem;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2.5;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
 	.all-projects-page {
 		--ink: #111111;
 		--line: 3px solid var(--ink);
@@ -186,11 +217,6 @@ import { projects, courses } from '../data/projects';
 		filter: grayscale(1);
 	}
 
-	.cards li.is-off:hover,
-	.cards li.is-off:focus-within {
-		opacity: 0.85;
-		filter: grayscale(0.4);
-	}
 
 	.cards {
 		display: grid;
@@ -235,6 +261,13 @@ import { projects, courses } from '../data/projects';
 	.card:hover .card-shot img,
 	.card:focus-visible .card-shot img {
 		transform: scale(1.05);
+	}
+
+	/* greyed-out cards stay clickable but sit still: no lift, tilt or zoom on hover */
+	.cards li.is-off .card:hover,
+	.cards li.is-off .card:hover .card-shot img,
+	.cards li.is-off .card:focus-visible .card-shot img {
+		transform: none;
 	}
 
 	.card-text {

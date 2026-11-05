@@ -1,50 +1,29 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Sparkle from '../components/Sparkle.astro';
+import ProjectsGallery from '../components/ProjectsGallery.astro';
+import ProjectField from '../components/ProjectField.astro';
 import TechStack from '../components/TechStack.astro';
 import { ThreeDPhotoCarousel } from '../components/ui/3d-carousel';
-import { projects } from '../data/projects';
+import { getProjects } from '../data/projects';
+import { getExperience } from '../data/experience';
+import { getLang, t } from '../i18n';
 const base = import.meta.env.BASE_URL;
 
-const experience = [
-	{
-		role: 'Software Development Intern',
-		org: 'Siemens',
-		about: 'Global technology company; I work on NX, its CAD/CAM software used by engineers worldwide.',
-		place: 'Milford, Ohio',
-		when: 'Jan 2025 – Present',
-		points: [
-			'Resolved 50+ customer-reported and internal issues in Siemens NX CAD, boosting stability and cutting the defect backlog by 10%.',
-			'Designed and shipped 3 new internal launch methods for NX, reducing Teamcenter integration setup time by 15% for 100+ engineers.',
-		],
-	},
-	{
-		role: 'Research Co-Op',
-		org: 'Feng Chia University',
-		about: 'Research university; summer co-op in computer networking.',
-		place: 'Taichung, Taiwan',
-		when: 'May – Aug 2024',
-		points: [
-			'Configured network devices and protocols in Cisco Packet Tracer.',
-			'Analysed, troubleshot and fixed protocol connectivity problems.',
-		],
-	},
-	{
-		role: 'Software Development Intern',
-		org: 'Wolters Kluwer',
-		about: 'Global provider of professional information, software and services.',
-		place: 'Madison, Wisconsin',
-		when: 'Jan – May 2024',
-		points: [
-			'Took part in daily stand-ups, sprint planning, reviews and retrospectives to keep sprints on track.',
-			'Updated NuGet packages and project code to move the team application to a newer .NET framework.',
-		],
-	},
-];
+const lang = getLang(Astro.url);
+const w = t(lang);
+const projects = getProjects(lang);
+const experience = getExperience(lang);
 ---
 
 <Layout current="home">
+	<!-- the projects gallery lives just off the left edge of home -->
+	<ProjectsGallery slot="left" />
+	<!-- and every project's page, scattered on the canvas below -->
+	<ProjectField slot="below" />
 	<div id="container">
+		<!-- binary-code stars in the top-left corner, behind everything but the pink page -->
+		<img class="bg-star" src={`${base}binary-star.png`} alt="" aria-hidden="true" width="276" height="299" />
 		<main>
 			<!-- the tagline fly-in plays on a visitor's first load only; runs before paint so repeat visits never flash -->
 			<script is:inline>
@@ -55,14 +34,17 @@ const experience = [
 			</script>
 			<header class="intro">
 				<div class="me-wrap">
-					<img class="me" src={`${base}me.jpg`} alt="Maya Tomarchio" width="600" height="600" />
+					<!-- clicking the headshot pans over to the guest book -->
+					<a class="me-link" href="#book" aria-label={w('home.headshot')}>
+						<img class="me" src={`${base}me.jpg`} alt="" width="600" height="600" />
+					</a>
 					<Sparkle size={34} class="me-spark" />
 				</div>
 				<div class="name-block">
 					<Sparkle size={44} class="name-spark-a" delay={0.6} />
 					<h1 class="big-name">Maya Tomarchio</h1>
-					<p class="tagline">Software Designer + Developer</p>
-					<p class="hero-line">Cincinnati, Ohio.</p>
+					<p class="tagline">{w('home.tagline')}</p>
+					<p class="hero-line">{w('home.location')}</p>
 					<Sparkle size={28} class="name-spark-b" delay={1.4} />
 				</div>
 			</header>
@@ -70,31 +52,37 @@ const experience = [
 				<img class="halftone-star" src={`${base}halftone_star.png`} alt="" />
 			</div>
 
-			<section id="projects" aria-label="Projects">
-				<ThreeDPhotoCarousel client:visible projects={projects} />
-				<a href={`${base}projects`} class="btn-gloss all-projects">All projects</a>
+			<section id="projects" aria-label={w('home.projects')}>
+				<!-- a second binary star, mirrored, tucked behind the carousel's bottom-right corner -->
+				<img class="bg-star bg-star-2" src={`${base}binary-star.png`} alt="" aria-hidden="true" width="276" height="299" />
+				<ThreeDPhotoCarousel client:visible projects={projects} labels={{ prev: w('carousel.prev'), next: w('carousel.next') }} />
+				<!-- the guest book lies level with this button, just off the right edge (see BookBay) -->
+				<a href="#projects" class="btn-gloss all-projects" data-book-anchor>{w('home.allProjects')}</a>
 			</section>
 
 			<div class="stack-wrap">
 				<TechStack />
 			</div>
 
-			<section id="experience" aria-label="Work experience">
+			<section id="experience" aria-labelledby="experience-title">
+				<h2 id="experience-title" class="section-title">{w('home.experience')}</h2>
 				<ol class="jobs">
 					{experience.map((job) => (
 						<li>
-							<article class="window job">
-								<div class="window-bar">
-									<span>{job.org.toLowerCase().replace(/[^a-z0-9]+/g, '_')}.exe</span>
-									<span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
-								</div>
+							<article class="job">
 								<div class="job-body">
 									<div class="job-top">
-										<p class="role">{job.role}</p>
-										<p class="when">{job.when}</p>
+										<div>
+											<p class="role">{job.role}</p>
+											<h3 class="org">{job.org}</h3>
+										</div>
+										<div class="job-meta">
+											<p class="when">{job.when}</p>
+											<p class="place">{job.place}</p>
+										</div>
 									</div>
-									<h3 class="org">{job.org} <span class="place"><span class="dot" aria-hidden="true">· </span>{job.place}</span></h3>
-									<p class="about">{job.about}</p>
+									{/* no "about" line: keep the same breathing room before the bullet points */}
+									{job.about ? <p class="about">{job.about}</p> : <div class="about-gap" aria-hidden="true"></div>}
 									<ul class="points">
 										{job.points.map((point) => <li>{point}</li>)}
 									</ul>
@@ -113,14 +101,52 @@ const experience = [
 		--ink: #111111;
 
 		font-family: Inter, Roboto, 'Helvetica Neue', 'Arial Nova', 'Nimbus Sans', Arial, sans-serif;
-		height: 100%;
 		color: var(--ink);
 		/* the tagline swells past the window edges mid-animation; don't let it add a scrollbar */
 		overflow-x: clip;
 	}
 
+	.bg-star {
+		position: absolute;
+		top: -1.5rem;
+		left: -2.5rem;
+		z-index: -2;
+		width: clamp(240px, 30vw, 440px);
+		height: auto;
+		opacity: 0.3;
+		transform: rotate(-8deg);
+		pointer-events: none;
+		user-select: none;
+	}
+
+	/* the opposite corner: down by the carousel's bottom right, flipped so the two don't look stamped */
+	.bg-star-2 {
+		top: auto;
+		left: auto;
+		right: 1vw;
+		bottom: -5rem;
+		width: clamp(200px, 24vw, 360px);
+		transform: scaleX(-1) rotate(-10deg);
+	}
+
+	@media (max-width: 768px) {
+		.bg-star {
+			top: -1rem;
+			left: -3rem;
+			width: 230px;
+			opacity: 0.22;
+		}
+
+		.bg-star-2 {
+			top: auto;
+			left: auto;
+			right: -2.5rem;
+			bottom: -3rem;
+			width: 190px;
+		}
+	}
+
 	main {
-		min-height: 100%;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -165,6 +191,21 @@ const experience = [
 
 	.me-wrap:hover {
 		transform: rotate(-4deg) scale(1.04);
+	}
+
+	.me-link {
+		display: block;
+		border-radius: 50%;
+		transition: transform 0.25s var(--ease-out);
+	}
+
+	.me-link:hover {
+		transform: rotate(-4deg) scale(1.04);
+	}
+
+	.me-link:focus-visible {
+		outline: 3px solid var(--white);
+		outline-offset: 4px;
 	}
 
 	.me {
@@ -308,6 +349,7 @@ const experience = [
 	}
 
 	#projects {
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -339,6 +381,20 @@ const experience = [
 		font-family: var(--font-text);
 	}
 
+	.section-title {
+		margin: 0 0 2rem;
+		padding-bottom: 0.9rem;
+		border-bottom: var(--line);
+		font-family: var(--font-display);
+		font-size: clamp(2rem, 4.5vw, 3.5rem);
+		font-weight: 900;
+		line-height: 1;
+		letter-spacing: -0.03em;
+		text-transform: uppercase;
+		color: var(--white);
+	}
+
+	/* cards step left, right, left down the page */
 	.jobs {
 		display: grid;
 		gap: 2rem;
@@ -347,17 +403,36 @@ const experience = [
 		list-style: none;
 	}
 
-	.job-body {
-		padding: 1.75rem clamp(1.25rem, 3vw, 2.5rem) 1.9rem;
+	.jobs > li {
+		width: min(100%, 52rem);
+	}
+
+	.jobs > li:nth-child(even) {
+		justify-self: end;
+	}
+
+	/* soft card: thin black line, rounded, the same light pink as the footer */
+	.job {
+		border: 2px solid var(--ink);
+		border-radius: 18px;
 		background: var(--pink-soft);
 	}
 
+	.job-body {
+		padding: 1.75rem clamp(1.25rem, 3vw, 2.5rem) 1.9rem;
+	}
+
+	/* role + company on the left; dates with the location under them on the right, both left-aligned */
 	.job-top {
 		display: flex;
 		flex-wrap: wrap;
-		align-items: baseline;
+		align-items: flex-start;
 		justify-content: space-between;
-		gap: 0.25rem 1.5rem;
+		gap: 0.5rem 1.5rem;
+	}
+
+	.job-meta {
+		text-align: left;
 	}
 
 	.role {
@@ -386,11 +461,13 @@ const experience = [
 	}
 
 	.place {
-		font-family: var(--font-text);
-		font-size: 1rem;
+		margin: 0.3rem 0 0;
+		font-size: 0.9375rem;
 		font-weight: 600;
-		letter-spacing: 0;
-		color: var(--ink);
+	}
+
+	.about-gap {
+		height: 0.9rem;
 	}
 
 	.about {
@@ -461,15 +538,6 @@ const experience = [
 			padding: 0 20px;
 		}
 
-		/* on phones the location gets its own line instead of wrapping after the company */
-		.place {
-			display: block;
-			margin-top: 0.3rem;
-		}
-
-		.place .dot {
-			display: none;
-		}
 
 	}
 </style>

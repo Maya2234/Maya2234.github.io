@@ -1,0 +1,211 @@
+---
+// A pixel-art guest book lying flat, seen from above at a 3/4 angle (2:1 "isometric" pixel style).
+// The book is modelled as a little 3D box plus a hinged cover, then rasterised onto a pixel grid
+// with a one-pixel ink outline. Each frame is the cover lifted to a different angle:
+//   frame 0 = closed, frame 1 = lifted a crack (hover), frames 2-5 = swinging open (click).
+
+const C = {
+	k: '#111111', // ink outline
+	p: '#e63e7d', // cover pink
+	d: '#c42764', // spine / back cover
+	s: '#ffd3e6', // cover lining
+	w: '#ffffff', // pages
+	g: '#ecd2de', // page-edge shading
+	c: '#00f0ff', // cover label
+	l: '#e889b0', // writing on the pages
+};
+
+const L = 28; // length, along x
+const W = 18; // width, along y (the spine runs along the front-left edge, y = W)
+const T = 5; // thickness
+
+type V3 = [number, number, number];
+type Face = { pts: V3[]; color: string; outline: boolean };
+
+const proj = ([x, y, z]: V3): [number, number] => [x - y, (x + y) / 2 - z];
+const rad = (deg: number) => (deg * Math.PI) / 180;
+
+// a point on the cover: u along the length, v measured from the spine hinge; theta = how far it's lifted
+const onCover = (u: number, v: number, theta: number): V3 => [u, W - v * Math.cos(rad(theta)), T + v * Math.sin(rad(theta))];
+const coverQuad = (u0: number, u1: number, v0: number, v1: number, theta: number): V3[] => [
+	onCover(u0, v0, theta),
+	onCover(u1, v0, theta),
+	onCover(u1, v1, theta),
+	onCover(u0, v1, theta),
+];
+
+function faces(theta: number): Face[] {
+	const list: Face[] = [
+		// page block
+		{ pts: [[0, 0, T], [L, 0, T], [L, W, T], [0, W, T]], color: C.w, outline: true },
+		{ pts: [[L, 0, 0], [L, W, 0], [L, W, T], [L, 0, T]], color: C.w, outline: true },
+		{ pts: [[0, W, 0], [L, W, 0], [L, W, T], [0, W, T]], color: C.d, outline: true },
+		// back cover peeking under the page edges, and a shading line through them
+		{ pts: [[L, 0, 0], [L, W, 0], [L, W, 1], [L, 0, 1]], color: C.p, outline: false },
+		{ pts: [[L, 0, 2.6], [L, W, 2.6], [L, W, 3.2], [L, 0, 3.2]], color: C.g, outline: false },
+	];
+	// handwriting on the top page, only seen once the cover lifts
+	if (theta > 0) {
+		[[4, 22], [4, 17], [4, 24], [4, 13], [4, 20]].forEach(([x0, x1], i) => {
+			const y = 3 + i * 2.8;
+			list.push({ pts: [[x0, y, T], [x1, y, T], [x1, y + 0.9, T], [x0, y + 0.9, T]], color: C.l, outline: false });
+		});
+	}
+	// the cover: outside (pink, with its label) while it faces up, lining once it's past upright
+	const outside = theta < 90;
+	list.push({ pts: coverQuad(0, L, 0, W, theta), color: outside ? C.p : C.s, outline: true });
+	if (outside) {
+		list.push({ pts: coverQuad(8, 21, 5, 13, theta), color: C.c, outline: true });
+		list.push({ pts: coverQuad(13.5, 15.5, 8, 10, theta), color: C.w, outline: false });
+		list.push({ pts: coverQuad(2, 3, 1.5, 16.5, theta), color: C.s, outline: false }); // gloss streak
+	}
+	return list;
+}
+
+const THETAS = [0, 26, 70, 115, 155, 180];
+
+// one shared pixel grid for every frame, so the book doesn't jump between frames
+const all = THETAS.flatMap((t) => faces(t).flatMap((f) => f.pts.map(proj)));
+const minX = Math.floor(Math.min(...all.map((p) => p[0]))) - 2;
+const maxX = Math.ceil(Math.max(...all.map((p) => p[0]))) + 2;
+const minY = Math.floor(Math.min(...all.map((p) => p[1]))) - 2;
+const maxY = Math.ceil(Math.max(...all.map((p) => p[1]))) + 3;
+const GW = maxX - minX;
+const GH = maxY - minY;
+
+const inside = (px: number, py: number, poly: [number, number][]) => {
+	let hit = false;
+	for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+		const [xi, yi] = poly[i];
+		const [xj, yj] = poly[j];
+		if (yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) hit = !hit;
+	}
+	return hit;
+};
+
+type Run = { x: number; y: number; w: number; c: string };
+const toRuns = (cells: (string | null)[][]): Run[] => {
+	const out: Run[] = [];
+	cells.forEach((row, y) => {
+		let x = 0;
+		while (x < GW) {
+			const c = row[x];
+			if (!c) {
+				x++;
+				continue;
+			}
+			let w = 1;
+			while (row[x + w] === c) w++;
+			out.push({ x, y, w, c });
+			x += w;
+		}
+	});
+	return out;
+};
+
+function render(theta: number): Run[] {
+	const list = faces(theta).map((f) => ({ ...f, poly: f.pts.map(proj) }));
+	const order: number[][] = Array.from({ length: GH }, () => Array(GW).fill(-1));
+	for (let y = 0; y < GH; y++) {
+		for (let x = 0; x < GW; x++) {
+			const px = x + minX + 0.5;
+			const py = y + minY + 0.5;
+			list.forEach((f, i) => {
+				if (inside(px, py, f.poly)) order[y][x] = i; // later faces paint over earlier ones
+			});
+		}
+	}
+	// colour, then ink along the outside and wherever an outlined face sits on top of another
+	const cells: (string | null)[][] = order.map((row) => row.map((i) => (i < 0 ? null : list[i].color)));
+	const outlined = (i: number) => {
+		if (i < 0) return false;
+		if (list[i].outline) return true;
+		// unoutlined details belong to the face under them
+		return false;
+	};
+	for (let y = 0; y < GH; y++) {
+		for (let x = 0; x < GW; x++) {
+			const i = order[y][x];
+			if (i < 0) continue;
+			const near = [order[y - 1]?.[x] ?? -1, order[y + 1]?.[x] ?? -1, order[y]?.[x - 1] ?? -1, order[y]?.[x + 1] ?? -1];
+			const edge = near.some((n) => n < 0) || (outlined(i) && near.some((n) => n > i && outlined(n)));
+			if (edge) cells[y][x] = C.k;
+		}
+	}
+	return toRuns(cells);
+}
+
+// soft pixel shadow on the floor, under the book's footprint
+const shadow: Run[] = (() => {
+	const foot: V3[] = [[-1, 1, 0], [L + 2.5, 1, 0], [L + 2.5, W + 3, 0], [-1, W + 3, 0]];
+	const poly = foot.map(proj);
+	const cells: (string | null)[][] = Array.from({ length: GH }, (_, y) =>
+		Array.from({ length: GW }, (_, x) => (inside(x + minX + 0.5, y + minY + 0.5, poly) ? C.k : null)),
+	);
+	return toRuns(cells);
+})();
+
+const frames = THETAS.map(render);
+
+// where to pin a tag (the slot): centred over the closed book, just above the lifted cover
+const closedPts = faces(THETAS[1]).flatMap((f) => f.pts.map(proj));
+const tagX = ((Math.min(...closedPts.map((p) => p[0])) + Math.max(...closedPts.map((p) => p[0]))) / 2 - minX).toFixed(1);
+const tagY = (Math.min(...closedPts.map((p) => p[1])) - minY).toFixed(1);
+---
+
+<span class="pixel-book" data-frame="0" style={`--gw: ${GW}; --gh: ${GH}; --tag-x: ${tagX}; --tag-y: ${tagY};`}>
+	<span class="tag-pin"><slot /></span>
+	<svg class="shadow" aria-hidden="true" viewBox={`0 0 ${GW} ${GH}`} shape-rendering="crispEdges">
+		{shadow.map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" fill={r.c} />)}
+	</svg>
+	{frames.map((runs, i) => (
+		<svg class="frame" aria-hidden="true" data-n={i} viewBox={`0 0 ${GW} ${GH}`} shape-rendering="crispEdges">
+			{runs.map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" fill={r.c} />)}
+		</svg>
+	))}
+</span>
+
+<style>
+	/* one grid pixel = --px screen pixels */
+	.pixel-book {
+		--px: 5px;
+		position: relative;
+		display: block;
+		width: calc(var(--gw) * var(--px));
+		height: calc(var(--gh) * var(--px));
+	}
+
+	.pixel-book svg {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+
+	.tag-pin {
+		position: absolute;
+		z-index: 1;
+		left: calc(var(--tag-x) * var(--px));
+		top: calc(var(--tag-y) * var(--px) - 14px);
+		transform: translate(-50%, -100%);
+		white-space: nowrap;
+	}
+
+	.shadow {
+		opacity: 0.18;
+	}
+
+	/* only the current frame shows; BookBay sets data-frame */
+	.frame {
+		visibility: hidden;
+	}
+
+	.pixel-book[data-frame='0'] .frame[data-n='0'],
+	.pixel-book[data-frame='1'] .frame[data-n='1'],
+	.pixel-book[data-frame='2'] .frame[data-n='2'],
+	.pixel-book[data-frame='3'] .frame[data-n='3'],
+	.pixel-book[data-frame='4'] .frame[data-n='4'],
+	.pixel-book[data-frame='5'] .frame[data-n='5'] {
+		visibility: visible;
+	}
+</style>
