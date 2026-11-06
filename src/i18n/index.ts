@@ -76,6 +76,15 @@ export const ui = {
 		'footer.resume': 'Resume',
 		'footer.wall': 'Sign the message wall',
 
+		'news.title': 'Quarterly newsletter',
+		'news.email': 'Your email',
+		'news.button': 'Sign up',
+		'news.invalid': 'That email doesn’t look right.',
+		'news.sending': 'Signing you up…',
+		'news.thanks': 'Thanks! Check your inbox to confirm.',
+		'news.soon': 'Sign-ups open soon. Thanks for your interest!',
+		'news.failed': 'That didn’t go through. Please try again in a moment.',
+
 		'book.aria': 'Guest book',
 		'book.title': 'Guest book',
 		'book.open': 'Open the guest book and sign the message wall',
@@ -152,6 +161,15 @@ export const ui = {
 		'footer.resume': 'Curriculum',
 		'footer.wall': 'Firma la bacheca',
 
+		'news.title': 'Newsletter trimestrale',
+		'news.email': 'La tua email',
+		'news.button': 'Iscriviti',
+		'news.invalid': 'Questa email non sembra corretta.',
+		'news.sending': 'Ti sto iscrivendo…',
+		'news.thanks': 'Grazie! Controlla la tua casella per confermare.',
+		'news.soon': 'Le iscrizioni apriranno presto. Grazie per l’interesse!',
+		'news.failed': 'Non è andata a buon fine. Riprova tra un momento.',
+
 		'book.aria': 'Libro degli ospiti',
 		'book.title': 'Libro degli ospiti',
 		'book.open': 'Apri il libro degli ospiti e firma la bacheca',
@@ -227,6 +245,15 @@ export const ui = {
 		'footer.vision': 'visión',
 		'footer.resume': 'Currículum',
 		'footer.wall': 'Firma el muro de mensajes',
+
+		'news.title': 'Boletín trimestral',
+		'news.email': 'Tu correo',
+		'news.button': 'Suscribirme',
+		'news.invalid': 'Ese correo no parece correcto.',
+		'news.sending': 'Suscribiéndote…',
+		'news.thanks': '¡Gracias! Revisa tu correo para confirmar.',
+		'news.soon': 'Las suscripciones abren pronto. ¡Gracias por tu interés!',
+		'news.failed': 'No se pudo completar. Inténtalo de nuevo en un momento.',
 
 		'book.aria': 'Libro de visitas',
 		'book.title': 'Libro de visitas',

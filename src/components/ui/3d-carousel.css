@@ -218,12 +218,13 @@
 	pointer-events: none;
 }
 
+/* just outside the visible cards (about 1000px across on wide screens), never past the edges */
 .tdc-arrow-prev {
-	left: 0;
+	left: max(0px, calc(50% - 560px));
 }
 
 .tdc-arrow-next {
-	right: 0;
+	right: max(0px, calc(50% - 560px));
 }
 
 .tdc-arrow svg {

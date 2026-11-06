@@ -12,7 +12,8 @@
 type Cam = { x: number; y: number; s: number };
 export type Group = { id: string; el: HTMLElement; label?: string };
 
-const EDGE = 20; // px at each side of the screen where holding the cursor pans
+const EDGE = 44; // px at the left and right of the screen where holding the cursor pans
+const EDGE_Y = 14; // px at the top and bottom: thinner, so reaching for tabs, the nav or the zoom bar doesn't scroll
 const EDGE_SPEED = 1.5; // px per ms at full speed
 const EDGE_RAMP = 350; // ms to reach full speed
 const EASE_MS = 120; // how quickly the camera catches up with where it's heading
@@ -66,7 +67,8 @@ function bounds() {
 function clamp(c: Cam): Cam {
 	const s = Math.min(MAX_S, Math.max(MIN_S, c.s));
 	const b = bounds();
-	const pad = 80 / s;
+	// room to pan past the outermost content before it stops: a good stretch of empty pink, then a firm end
+	const pad = 260 / s;
 	const viewW = vw() / s;
 	const viewH = vh() / s;
 	const fit = (v: number, lo: number, hi: number, view: number) =>
@@ -126,8 +128,43 @@ export function moveTo(c: Partial<Cam>, instant = false) {
 }
 
 /** pan by screen pixels */
+// ---------- walls ----------
+// A wall is a floor under an element (the footer): moving around by hand, you can't pass through it from above or
+// below while the middle of the screen is over it, but you can slide along it sideways, back up, or around its ends.
+// Jumps (buttons, links, fitting an area) ignore walls, and so does the zoomed-out map.
+const walls: HTMLElement[] = [];
+const WALL_GAP = 24; // px of pink left below the footer when you hit the wall
+
+export function addWall(el: HTMLElement) {
+	walls.push(el);
+}
+
+function applyWalls(from: Cam, to: Cam): Cam {
+	if (to.s < INTERACTIVE_S) return to;
+	const viewW = vw() / to.s;
+	const viewH = vh() / to.s;
+	const cx = to.x + viewW / 2;
+	let y = to.y;
+	for (const el of walls) {
+		const r = worldRect(el);
+		if (cx < r.x || cx > r.x + r.w) continue;
+		const wallY = r.y + r.h + WALL_GAP / to.s;
+		if (from.y + viewH <= wallY + 0.5 && y + viewH > wallY) {
+			y = wallY - viewH; // coming down onto it
+			dispatchEvent(new CustomEvent('canvas:wall', { detail: 'below' }));
+		} else if (from.y >= wallY - 0.5 && y < wallY) {
+			y = wallY; // coming up from underneath
+			dispatchEvent(new CustomEvent('canvas:wall', { detail: 'above' }));
+		}
+	}
+	return { ...to, y };
+}
+
+/** a hand movement: clamped to the canvas and stopped by walls */
+const step = (to: Cam) => applyWalls(goal, clamp(to));
+
 export function panBy(dx: number, dy: number, instant = true) {
-	goal = clamp({ ...goal, x: goal.x + dx / goal.s, y: goal.y + dy / goal.s });
+	goal = step({ ...goal, x: goal.x + dx / goal.s, y: goal.y + dy / goal.s });
 	if (instant) {
 		cam = { ...cam, x: goal.x, y: goal.y, s: cam.s };
 		// keep any zoom glide going
@@ -216,7 +253,7 @@ function edgeStep(dt: number) {
 	const ramp = Math.min(1, (performance.now() - edge.since) / EDGE_RAMP);
 	const before = { x: goal.x, y: goal.y };
 	const d = EDGE_SPEED * ramp * dt;
-	goal = clamp({ ...goal, x: goal.x + (edge.x * d) / goal.s, y: goal.y + (edge.y * d) / goal.s });
+	goal = step({ ...goal, x: goal.x + (edge.x * d) / goal.s, y: goal.y + (edge.y * d) / goal.s });
 	cam = { ...cam, x: goal.x, y: goal.y };
 	// at the end of the canvas: stop pointing an arrow that way
 	pointArrow({ x: goal.x !== before.x ? edge.x : 0, y: goal.y !== before.y ? edge.y : 0 });
@@ -238,10 +275,13 @@ export function initCamera(worldEl: HTMLElement) {
 		const dy = lastY < 0 ? 0 : e.clientY - lastY;
 		lastX = e.clientX;
 		lastY = e.clientY;
+		// the buttons pinned in the corners (home, zoom, the book tab) sit inside the edge zones: reaching for one
+		// shouldn't move the page
+		if ((e.target as HTMLElement).closest?.('.home-btn, .zoom-controls, .book-tab')) return setEdge(0, 0);
 		const atR = e.clientX >= vw() - EDGE;
 		const atL = e.clientX <= EDGE;
-		const atB = e.clientY >= vh() - EDGE;
-		const atT = e.clientY <= EDGE;
+		const atB = e.clientY >= vh() - EDGE_Y;
+		const atT = e.clientY <= EDGE_Y;
 		let x = atR ? (edge.x === 1 || dx > 0 ? 1 : 0) : atL ? (edge.x === -1 || dx < 0 ? -1 : 0) : 0;
 		let y = atB ? (edge.y === 1 || dy > 0 ? 1 : 0) : atT ? (edge.y === -1 || dy < 0 ? -1 : 0) : 0;
 		setEdge(x, y);

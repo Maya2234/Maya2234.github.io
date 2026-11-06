@@ -1,0 +1,165 @@
+---
+// The quarterly newsletter sign-up: a small window on the homepage canvas, just under the guest book.
+// Sign-ups go to Buttondown (see SETUP.md); the footer's newspaper icon links here (#newsletter).
+import { getLang, t } from '../i18n';
+
+const lang = getLang(Astro.url);
+const w = t(lang);
+
+// quarterly newsletter: sign-ups go to Buttondown (see SETUP.md). Without a username the form says sign-ups open soon.
+const buttondown = import.meta.env.PUBLIC_BUTTONDOWN_USERNAME as string | undefined;
+const newsletterUrl = buttondown ? `https://buttondown.com/api/emails/embed-subscribe/${buttondown}` : '';
+const newsWords = {
+	invalid: w('news.invalid'),
+	sending: w('news.sending'),
+	thanks: w('news.thanks'),
+	soon: w('news.soon'),
+	failed: w('news.failed'),
+};
+---
+
+<section class="window news-block" aria-labelledby="nl-email-label">
+	<div class="window-bar">
+		<span></span>
+		<span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
+	</div>
+	<form class="newsletter" action={newsletterUrl || undefined} method="post" novalidate data-url={newsletterUrl} data-words={JSON.stringify(newsWords)}>
+		<div class="nl-text">
+			<label class="nl-title" id="nl-email-label" for="nl-email">{w('news.title')}</label>
+		</div>
+		<div class="nl-row">
+			<input id="nl-email" class="nl-input" type="email" name="email" required autocomplete="email" placeholder={w('news.email')} />
+			<input type="hidden" name="tag" value={lang} />
+			<!-- bots fill every field; people never see this one -->
+			<input class="nl-trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+			<button type="submit" class="btn-gloss nl-button">{w('news.button')}</button>
+		</div>
+		<p class="nl-status" role="status" aria-live="polite"></p>
+	</form>
+</section>
+
+<script>
+	// ---------- newsletter sign-up ----------
+	const form = document.querySelector<HTMLFormElement>('.newsletter');
+	if (form) {
+		const status = form.querySelector<HTMLElement>('.nl-status')!;
+		const button = form.querySelector<HTMLButtonElement>('.nl-button')!;
+		const words: Record<string, string> = JSON.parse(form.dataset.words ?? '{}');
+		const say = (text: string, kind = '') => {
+			status.textContent = text;
+			status.dataset.kind = kind;
+		};
+		form.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			const data = new FormData(form);
+			const email = String(data.get('email') ?? '').trim();
+			if (String(data.get('website') ?? '')) return say(words.thanks, 'ok'); // a bot: pretend it worked
+			if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+				form.querySelector<HTMLInputElement>('.nl-input')!.focus();
+				return say(words.invalid, 'error');
+			}
+			const url = form.dataset.url;
+			if (!url) return say(words.soon, 'ok');
+			button.disabled = true;
+			say(words.sending);
+			try {
+				data.delete('website');
+				// Buttondown doesn't answer cross-site requests, so this sends without reading the reply;
+				// it emails the subscriber a confirmation link
+				await fetch(url, { method: 'POST', mode: 'no-cors', body: data });
+				form.reset();
+				say(words.thanks, 'ok');
+			} catch {
+				say(words.failed, 'error');
+			} finally {
+				button.disabled = false;
+			}
+		});
+	}
+</script>
+
+<style>
+	/* a little window under the guest book: the pitch, then the email box and button */
+	.news-block {
+		width: min(420px, calc(var(--book-shift, 420px) - 40px));
+	}
+
+	.newsletter {
+		display: grid;
+		gap: 1rem;
+		padding: 1.25rem 1.4rem 1.1rem;
+		background: var(--pink-soft);
+	}
+
+	.nl-text {
+		display: grid;
+		gap: 0.3rem;
+	}
+
+	.nl-title {
+		font-family: var(--font-tech);
+		font-size: 0.9rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.nl-row {
+		display: flex;
+		gap: 0.6rem;
+	}
+
+	.nl-input {
+		flex: 1;
+		min-width: 0;
+		padding: 0.75rem 1.1rem;
+		border: 2px solid var(--ink);
+		border-radius: 999px;
+		background: var(--white);
+		color: var(--ink);
+		font: 600 1rem var(--font-text);
+	}
+
+	.nl-input::placeholder {
+		color: rgba(17, 17, 17, 0.45);
+	}
+
+	.nl-input:focus-visible {
+		outline: 3px solid var(--white);
+		outline-offset: 2px;
+	}
+
+	.nl-button {
+		flex-shrink: 0;
+		padding: 0.75rem 1.5rem;
+	}
+
+	.nl-trap {
+		position: absolute;
+		left: -9999px;
+		width: 1px;
+		height: 1px;
+		opacity: 0;
+	}
+
+	.nl-status {
+		min-height: 1.3em;
+		margin: 0;
+		font-size: 0.95rem;
+		font-weight: 600;
+	}
+
+	.nl-status[data-kind='error'] {
+		color: var(--pink-deep);
+	}
+
+	@media (max-width: 420px) {
+		.nl-row {
+			flex-direction: column;
+		}
+
+		.nl-button {
+			align-self: flex-start;
+		}
+	}
+</style>

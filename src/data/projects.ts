@@ -57,6 +57,7 @@ const list: { title: string; page: string; image: string; course?: string; en: W
 		title: 'Cube World Aero',
 		page: 'cube-world-aero',
 		image: 'aeroCubeWorld.png',
+		course: 'cg',
 		en: {
 			alt: 'Cube World Aero, a WebGL cube landscape with a city and windmills',
 			blurb: 'A cube landscape built from scratch in raw WebGL, no 3D library.',

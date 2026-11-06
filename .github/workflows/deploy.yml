@@ -32,6 +32,11 @@ jobs:
 
       - name: Build Astro site
         run: npm run build
+        # public settings for the guest book and newsletter (Settings > Secrets and variables > Actions > Variables; see SETUP.md)
+        env:
+          PUBLIC_SUPABASE_URL: ${{ vars.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_ANON_KEY: ${{ vars.PUBLIC_SUPABASE_ANON_KEY }}
+          PUBLIC_BUTTONDOWN_USERNAME: ${{ vars.PUBLIC_BUTTONDOWN_USERNAME }}
 
       - name: Upload build artifacts
         uses: actions/upload-pages-artifact@v3

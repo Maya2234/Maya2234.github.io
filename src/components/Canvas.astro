@@ -15,6 +15,16 @@ const w = t(lang);
 	<span>MT</span>
 </a>
 
+<!-- shown when you push against the wall under the footer: the way on is sideways -->
+<div class="wall-hint" aria-hidden="true">
+	<span class="hint-side hint-left">
+		{[0, 1, 2].map((i) => <svg viewBox="0 0 16 24" style={`--i: ${i}`}><path d="M12 3 4 12l8 9" /></svg>)}
+	</span>
+	<span class="hint-side hint-right">
+		{[0, 1, 2].map((i) => <svg viewBox="0 0 16 24" style={`--i: ${i}`}><path d="M4 3l8 9-8 9" /></svg>)}
+	</span>
+</div>
+
 <div class="zoom-controls" role="group" aria-label={w('canvas.zoom')} data-home={w('canvas.home')} data-projects={w('canvas.projects')}>
 	<button type="button" class="zoom-btn" data-zoom="out" aria-label={w('canvas.zoomOut')}>
 		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" /></svg>
@@ -40,6 +50,7 @@ const w = t(lang);
 		onCamera,
 		registerGroup,
 		registerView,
+		addWall,
 		worldRect,
 		zoomAt,
 	} from '../scripts/camera';
@@ -60,10 +71,17 @@ const w = t(lang);
 	const names = document.querySelector<HTMLElement>('.zoom-controls')!.dataset;
 	registerGroup({ id: 'home', el: stage, label: names.home });
 	if (projectsBay) registerGroup({ id: 'projects', el: projectsBay, label: names.projects });
-	if (bookBay) registerGroup({ id: 'book', el: bookBay });
+	const bookSpot = bookBay?.querySelector<HTMLElement>('.book-spot');
+	if (bookSpot) registerGroup({ id: 'book', el: bookSpot });
+	const newsSpot = bookBay?.querySelector<HTMLElement>('.news-spot');
+	if (newsSpot) registerGroup({ id: 'newsletter', el: newsSpot });
 	pages.forEach((el) => registerGroup({ id: el.dataset.canvasGroup!, el, label: el.dataset.label }));
 
 	registerView('home', (instant) => moveTo({ s: 1, x: 0, y: 0 }, instant));
+
+	// scrolling down home stops at the bottom of the footer; go sideways (or around it) to reach the project pages
+	const footer = stage.querySelector<HTMLElement>('.site-foot');
+	if (footer) addWall(footer);
 
 	// this page's home address (/ or /it/), so in-page links to it fly instead of reloading
 	const home = new URL(document.querySelector<HTMLAnchorElement>('.home-btn')?.href ?? base, location.href).pathname;
@@ -78,23 +96,15 @@ const w = t(lang);
 			return r.y + r.h;
 		});
 		const rowTop = Math.max(...tops) + 360;
-		// three loose columns under the gallery, home and the book; each page drifts a little off its column
-		const columns = [-W, 0, W];
-		const placement = [
-			{ col: 0, dx: 0.04, dy: 0 },
-			{ col: 1, dx: 0.1, dy: 260 },
-			{ col: 2, dx: 0.02, dy: 120 },
-			{ col: 0, dx: 0.12, dy: 320 },
-		];
-		const colBottom = [rowTop, rowTop, rowTop];
+		// the projects line: every project page side by side under the gallery, home and the book,
+		// each one bobbing a little up or down so it reads as scattered rather than a strict grid
+		const GAP = 280;
+		const bob = [0, 180, 60, 240, 120];
+		let x = -W + Math.max(0, W - (pages[0]?.offsetWidth ?? W)) / 2;
 		pages.forEach((el, i) => {
-			const p = placement[i % placement.length];
-			const pageW = el.offsetWidth;
-			const x = columns[p.col] + Math.max(0, W - pageW) / 2 + (p.dx - 0.06) * W;
-			const y = colBottom[p.col] + p.dy;
 			el.style.left = `${Math.round(x)}px`;
-			el.style.top = `${Math.round(y)}px`;
-			colBottom[p.col] = y + el.offsetHeight + 280;
+			el.style.top = `${Math.round(rowTop + bob[i % bob.length])}px`;
+			x += el.offsetWidth + GAP;
 		});
 	}
 
@@ -104,6 +114,31 @@ const w = t(lang);
 	const ro = new ResizeObserver(() => layoutField());
 	[stage, projectsBay, bookBay, ...pages].forEach((el) => el && ro.observe(el));
 
+	// ---------- hitting the footer wall: point the way around it ----------
+
+	const hint = document.querySelector<HTMLElement>('.wall-hint')!;
+	let hintFrom: { x: number; y: number; s: number } | null = null;
+	let hintTimer = 0;
+	const hideHint = () => {
+		hint.classList.remove('is-on');
+		hintFrom = null;
+	};
+	addEventListener('canvas:wall', (e) => {
+		hint.classList.toggle('from-below', (e as CustomEvent).detail === 'above');
+		hint.classList.add('is-on');
+		// measure from where the camera settles against the wall (this fires mid-move)
+		hintFrom = null;
+		requestAnimationFrame(() => requestAnimationFrame(() => (hintFrom = getCamera())));
+		clearTimeout(hintTimer);
+		hintTimer = window.setTimeout(hideHint, 3500);
+	});
+	// gone as soon as you head sideways or back the other way
+	onCamera((c) => {
+		if (!hintFrom) return;
+		const moved = Math.abs(c.x - hintFrom.x) * c.s > 60 || Math.abs(c.y - hintFrom.y) * c.s > 40 || c.s !== hintFrom.s;
+		if (moved) hideHint();
+	});
+
 	// ---------- the home button: glide back to the starting view ----------
 
 	document.querySelector<HTMLAnchorElement>('.home-btn')!.addEventListener('click', (e) => {
@@ -111,6 +146,8 @@ const w = t(lang);
 		e.preventDefault();
 		goToView('home');
 	});
+	// pressing it with the keyboard or a tap can come right after a pan: make sure nothing is still moving the page
+	document.querySelector<HTMLAnchorElement>('.home-btn')!.addEventListener('pointerdown', () => dispatchEvent(new Event('blur')));
 
 	// ---------- zoom buttons ----------
 
@@ -126,27 +163,63 @@ const w = t(lang);
 		}),
 	);
 
-	// ---------- zoomed out: a click only ever zooms in ----------
-	// on a page: fit that page to the width of the screen, keeping the spot you clicked level;
-	// on empty space (or a page already as wide as the screen): zoom in where you clicked
+	// ---------- zoomed out: hover outlines an area, a click centres it ----------
+	// a click only ever zooms in: an area fills the width of the screen (centred, or from its top if it's
+	// taller than the screen); empty space zooms in where you clicked
+
+	const hover = document.createElement('div');
+	hover.className = 'map-hover';
+	hover.setAttribute('aria-hidden', 'true');
+	world.append(hover);
+	onCamera((c) => world.style.setProperty('--map-s', String(c.s)));
+
+	const areaAt = (clientX: number, clientY: number) => {
+		const c = getCamera();
+		return groupAt(c.x + clientX / c.s, c.y + clientY / c.s);
+	};
+
+	let hovered: HTMLElement | null = null;
+	const showHover = (el: HTMLElement | null) => {
+		if (el === hovered) return;
+		hovered = el;
+		hover.classList.toggle('is-on', !!el);
+		root.classList.toggle('over-area', !!el);
+		if (!el) return;
+		const r = worldRect(el);
+		hover.style.setProperty('--hx', `${r.x}px`);
+		hover.style.setProperty('--hy', `${r.y}px`);
+		hover.style.setProperty('--hw', `${r.w}px`);
+		hover.style.setProperty('--hh', `${r.h}px`);
+	};
+	addEventListener('pointermove', (e) => {
+		if (!root.classList.contains('zoomed-out') || root.classList.contains('is-dragging')) return showHover(null);
+		if ((e.target as HTMLElement).closest('.zoom-controls, .home-btn, .book-tab')) return showHover(null);
+		showHover(areaAt(e.clientX, e.clientY)?.el ?? null);
+	});
+	onCamera((c) => c.s >= 0.9 && showHover(null));
+
+	function centreArea(r: { x: number; y: number; w: number; h: number }) {
+		const W = root.clientWidth;
+		const H = root.clientHeight;
+		const s = Math.min(1.25, (W * 0.96) / r.w);
+		const x = r.x + r.w / 2 - W / s / 2;
+		const y = r.h * s <= H * 0.96 ? r.y + r.h / 2 - H / s / 2 : r.y - 24 / s;
+		moveTo({ s, x, y });
+	}
 
 	addEventListener('click', (e) => {
 		if (!root.classList.contains('zoomed-out')) return;
 		if (e.defaultPrevented || (e.target as HTMLElement).closest('.zoom-controls, .book-tab, .home-btn, .wall-overlay')) return;
 		e.preventDefault();
-		const c = getCamera();
-		const wx = c.x + e.clientX / c.s;
-		const wy = c.y + e.clientY / c.s;
-		const g = groupAt(wx, wy);
-		const r = g && worldRect(g.el);
-		const fit = r ? Math.min(1.25, root.clientWidth / r.w) : 0;
-		if (!r || fit <= c.s * 1.02) return zoomAt(2, e.clientX, e.clientY);
-		moveTo({ s: fit, x: r.x + r.w / 2 - root.clientWidth / fit / 2, y: wy - e.clientY / fit });
+		const g = areaAt(e.clientX, e.clientY);
+		if (!g) return zoomAt(2, e.clientX, e.clientY);
+		showHover(null);
+		centreArea(worldRect(g.el));
 	});
 
 	// ---------- links that fly around the canvas instead of leaving the page ----------
 
-	const HASHES: Record<string, string> = { '#projects': 'projects', '#home': 'home', '#book': 'book' };
+	const HASHES: Record<string, string> = { '#projects': 'projects', '#home': 'home', '#book': 'book', '#newsletter': 'newsletter' };
 	const onHome = (a: HTMLAnchorElement) => a.origin === location.origin && (a.pathname === home || a.pathname === location.pathname);
 
 	document.addEventListener('click', (e) => {
@@ -198,6 +271,94 @@ const w = t(lang);
 			left: 16px;
 			padding: 0.4rem 0.85rem 0.4rem 0.65rem;
 			font-size: 0.9rem;
+		}
+	}
+
+	/* the wall hint: two sets of chevrons drifting outward, toward the wall's left and right ends */
+	/* each set sits out by its own edge of the screen, pointing the way off it */
+	.wall-hint {
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: 72px;
+		z-index: 35;
+		display: flex;
+		justify-content: space-between;
+		padding: 0 clamp(20px, 4vw, 60px);
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 0.25s ease;
+	}
+
+	/* hit from underneath: the hint sits near the top instead */
+	.wall-hint.from-below {
+		top: 72px;
+		bottom: auto;
+	}
+
+	.wall-hint.is-on {
+		opacity: 1;
+	}
+
+	.hint-side {
+		display: flex;
+		gap: 2px;
+	}
+
+	.hint-side svg {
+		width: 22px;
+		height: 32px;
+		fill: none;
+		stroke: var(--white);
+		stroke-width: 3.5;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		filter: drop-shadow(2px 2px 0 var(--ink));
+		opacity: 0;
+	}
+
+	.is-on .hint-left svg {
+		animation: hint-left 1.1s ease-in-out infinite;
+		animation-delay: calc((2 - var(--i)) * 0.15s);
+	}
+
+	.is-on .hint-right svg {
+		animation: hint-right 1.1s ease-in-out infinite;
+		animation-delay: calc(var(--i) * 0.15s);
+	}
+
+	@keyframes hint-left {
+		0% {
+			opacity: 0;
+			transform: translateX(10px);
+		}
+		40% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+			transform: translateX(-14px);
+		}
+	}
+
+	@keyframes hint-right {
+		0% {
+			opacity: 0;
+			transform: translateX(-10px);
+		}
+		40% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+			transform: translateX(14px);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.is-on .hint-side svg {
+			animation: none;
+			opacity: 1;
 		}
 	}
 
@@ -279,6 +440,39 @@ const w = t(lang);
 
 	:global(html.zoomed-out .viewport) {
 		cursor: zoom-in;
+	}
+
+	/* the area under the cursor on the zoomed-out map: a thin pixel-art yellow outline with a little room
+	   around the area, square "pixel" corners and a hard ink pixel shadow. --u is one pixel of the outline and
+	   --pad the margin, both divided by the zoom (--map-s) so they stay the same size on screen. */
+	:global(.map-hover) {
+		--u: calc(3px / var(--map-s, 1));
+		--pad: calc(18px / var(--map-s, 1));
+		--y: #ffe600;
+		position: absolute;
+		z-index: 6;
+		left: calc(var(--hx, 0px) - var(--pad));
+		top: calc(var(--hy, 0px) - var(--pad));
+		width: calc(var(--hw, 0px) + 2 * var(--pad));
+		height: calc(var(--hh, 0px) + 2 * var(--pad));
+		/* four edges, each stopping one pixel short of the corner, plus a pixel tucked into each corner: stepped corners */
+		background:
+			linear-gradient(var(--y), var(--y)) var(--u) 0 / calc(100% - 2 * var(--u)) var(--u) no-repeat,
+			linear-gradient(var(--y), var(--y)) var(--u) 100% / calc(100% - 2 * var(--u)) var(--u) no-repeat,
+			linear-gradient(var(--y), var(--y)) 0 var(--u) / var(--u) calc(100% - 2 * var(--u)) no-repeat,
+			linear-gradient(var(--y), var(--y)) 100% var(--u) / var(--u) calc(100% - 2 * var(--u)) no-repeat,
+			linear-gradient(var(--y), var(--y)) var(--u) var(--u) / var(--u) var(--u) no-repeat,
+			linear-gradient(var(--y), var(--y)) calc(100% - var(--u)) var(--u) / var(--u) var(--u) no-repeat,
+			linear-gradient(var(--y), var(--y)) var(--u) calc(100% - var(--u)) / var(--u) var(--u) no-repeat,
+			linear-gradient(var(--y), var(--y)) calc(100% - var(--u)) calc(100% - var(--u)) / var(--u) var(--u) no-repeat;
+		filter: drop-shadow(var(--u) var(--u) 0 var(--ink));
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 0.12s steps(2, end);
+	}
+
+	:global(.map-hover.is-on) {
+		opacity: 1;
 	}
 
 	:global(html.is-dragging),

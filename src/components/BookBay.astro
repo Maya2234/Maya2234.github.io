@@ -1,5 +1,6 @@
 ---
 import PixelBook from './PixelBook.astro';
+import NewsletterBlock from './NewsletterBlock.astro';
 import { getLang, localize, t } from '../i18n';
 
 const lang = getLang(Astro.url);
@@ -18,6 +19,10 @@ const w = t(lang);
 		<a class="book-link" href={localize(lang, 'message-wall')} aria-label={w('book.open')}>
 			<PixelBook />
 		</a>
+	</div>
+	<!-- the quarterly newsletter sign-up, a little way under the book -->
+	<div class="news-spot" id="newsletter">
+		<NewsletterBlock />
 	</div>
 </aside>
 <!-- the message wall, opened over the canvas with a little margin showing around it -->
@@ -46,6 +51,7 @@ const w = t(lang);
 	const stage = document.querySelector<HTMLElement>('.stage')!;
 	const bay = document.querySelector<HTMLElement>('.book-bay')!;
 	const spot = bay.querySelector<HTMLElement>('.book-spot')!;
+	const news = bay.querySelector<HTMLElement>('.news-spot')!;
 	const link = bay.querySelector<HTMLAnchorElement>('.book-link')!;
 	const book = bay.querySelector<HTMLElement>('.pixel-book')!;
 	const tab = document.querySelector<HTMLButtonElement>('.book-tab')!;
@@ -63,7 +69,9 @@ const w = t(lang);
 	function placeBook() {
 		const anchor = stage.querySelector<HTMLElement>('[data-book-anchor]');
 		const y = anchor ? worldRect(anchor).y + anchor.offsetHeight / 2 : Math.min(innerHeight * 0.5, stage.offsetHeight / 2);
-		spot.style.top = `${Math.max(0, y - spot.offsetHeight / 2)}px`;
+		const top = Math.max(0, y - spot.offsetHeight / 2);
+		spot.style.top = `${top}px`;
+		news.style.top = `${top + spot.offsetHeight + 220}px`;
 	}
 
 	placeBook();
@@ -75,6 +83,12 @@ const w = t(lang);
 		const b = worldRect(bay);
 		const r = worldRect(spot);
 		moveTo({ s: 1, x: b.x + b.w - root.clientWidth, y: r.y + r.h / 2 - root.clientHeight / 2 }, instant);
+	});
+
+	// the "newsletter" view: the sign-up block in the middle of the screen
+	registerView('newsletter', (instant) => {
+		const r = worldRect(news);
+		moveTo({ s: 1, x: r.x + r.w / 2 - root.clientWidth / 2, y: r.y + r.h / 2 - root.clientHeight / 2 }, instant);
 	});
 
 	// is the book (mostly) on screen right now?
@@ -172,11 +186,24 @@ const w = t(lang);
 	}
 
 	/* the book's spot; the script sets its top so it lies level with "All projects" */
+	/* the newsletter block: below the book and off to the right of it (the script sets how far down) */
+	.news-spot {
+		position: absolute;
+		top: 70vh;
+		left: min(300px, 40%);
+		right: 0;
+		width: fit-content;
+		margin: 0 auto;
+	}
+
+	/* only as wide as the book, centred in its column, so the map outline hugs it */
 	.book-spot {
 		position: absolute;
 		top: 40vh;
 		left: 0;
 		right: 0;
+		width: fit-content;
+		margin: 0 auto;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
