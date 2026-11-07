@@ -40,9 +40,18 @@ const pages = [
 		height: 0;
 	}
 
-	/* each page is a full-width panel; Canvas.astro sets left / top */
+	/* each page is a full-width panel; Canvas.astro sets left / top. Until it has, the pages stay hidden:
+	   otherwise they'd sit on top of home for a moment and then jump away (a big layout shift) */
 	.canvas-project {
 		position: absolute;
+		visibility: hidden;
+	}
+
+	.canvas-project.is-placed {
+		visibility: visible;
+	}
+
+	.canvas-project {
 		width: min(100vw, 1240px);
 		padding-bottom: 4rem;
 	}

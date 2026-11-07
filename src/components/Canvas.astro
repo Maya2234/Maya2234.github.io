@@ -104,6 +104,7 @@ const w = t(lang);
 		pages.forEach((el, i) => {
 			el.style.left = `${Math.round(x)}px`;
 			el.style.top = `${Math.round(rowTop + bob[i % bob.length])}px`;
+			el.classList.add('is-placed');
 			x += el.offsetWidth + GAP;
 		});
 	}
