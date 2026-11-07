@@ -10,14 +10,22 @@ import { getLang, languages, switchLang, t, type Lang } from '../i18n';
 interface Props {
 	current?: 'home' | 'projects' | 'wall';
 	title?: string;
+	// what search engines and link previews show under the title (defaults to the site's description)
+	description?: string;
 	// full-screen pages (the message wall): no nav, footer or guest book
 	bare?: boolean;
 }
 
-const { current, title, bare = false } = Astro.props;
+const { current, title, bare = false, description } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const lang = getLang(Astro.url);
 const site = Astro.site ?? Astro.url;
+const w = t(lang);
+const pageTitle = title ? `${title} | Maya Tomarchio` : w('site.title');
+const pageDescription = description ?? w('site.description');
+// the one official address for this page, so Google doesn't count copies (with #hashes or ?queries) separately
+const canonical = new URL(Astro.url.pathname, site).href;
+const ogLocale = { en: 'en_US', es: 'es_ES', it: 'it_IT' }[lang];
 ---
 
 <!doctype html>
@@ -33,10 +41,23 @@ const site = Astro.site ?? Astro.url;
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;600&family=Orbitron:wght@700&family=Unbounded:wght@900&family=Pacifico&display=swap" />
-		<title>{title ? `${title} | Maya Tomarchio` : t(lang)('site.title')}</title>
+		<title>{pageTitle}</title>
+		<meta name="description" content={pageDescription} />
+		<link rel="canonical" href={canonical} />
+		<!-- link previews (iMessage, LinkedIn, Slack...) -->
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Maya Tomarchio" />
+		<meta property="og:title" content={pageTitle} />
+		<meta property="og:description" content={pageDescription} />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:image" content={new URL(`${base}me.jpg`, site).href} />
+		<meta property="og:locale" content={ogLocale} />
+		<meta name="twitter:card" content="summary" />
 		{(Object.keys(languages) as Lang[]).map((code) => (
 			<link rel="alternate" hreflang={code} href={new URL(switchLang(Astro.url, code), site).href} />
 		))}
+		<link rel="alternate" hreflang="x-default" href={new URL(switchLang(Astro.url, 'en'), site).href} />
+		<link rel="sitemap" href={`${base}sitemap-index.xml`} />
 	</head>
 	<body>
 		{bare ? (

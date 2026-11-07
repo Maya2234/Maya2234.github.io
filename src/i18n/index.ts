@@ -32,6 +32,7 @@ export function switchLang(url: URL, to: Lang) {
 export const ui = {
 	en: {
 		'site.title': 'Maya Tomarchio | Developer',
+		'site.description': 'Maya Tomarchio is a software designer and developer in Cincinnati, Ohio. See her projects, experience and tech stack, and sign the guest book.',
 		'nav.home': 'Maya Tomarchio, home',
 		'nav.language': 'Language',
 
@@ -117,6 +118,7 @@ export const ui = {
 	},
 	it: {
 		'site.title': 'Maya Tomarchio | Sviluppatrice',
+		'site.description': 'Maya Tomarchio è una designer e sviluppatrice software di Cincinnati, Ohio. Scopri i suoi progetti, la sua esperienza e le sue competenze, e firma il libro degli ospiti.',
 		'nav.home': 'Maya Tomarchio, pagina iniziale',
 		'nav.language': 'Lingua',
 
@@ -202,6 +204,7 @@ export const ui = {
 	},
 	es: {
 		'site.title': 'Maya Tomarchio | Desarrolladora',
+		'site.description': 'Maya Tomarchio es diseñadora y desarrolladora de software en Cincinnati, Ohio. Conoce sus proyectos, su experiencia y sus herramientas, y firma el libro de visitas.',
 		'nav.home': 'Maya Tomarchio, página de inicio',
 		'nav.language': 'Idioma',
 
